@@ -10,8 +10,10 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "konva": "^9.3.14",
     "nuxt": "^3.13.0",
     "vue": "latest",
+    "vue-konva": "^3.1.0",
     "vue-router": "latest"
   }
 }
