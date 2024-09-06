@@ -3,16 +3,16 @@
     <v-main>
       <v-container>
         <ClientOnly>
-          <v-stage :config="configKonva" @click="drawCircle"> 
-          <v-layer>
-            <v-circle v-for="circle in circles" :config="circle" />
-            <v-arrow :config="configArrow" />
-          </v-layer>
-        </v-stage>
+          <v-stage :config="configKonva" @dblclick="drawCircle"> 
+            <v-layer>
+              <v-circle v-for="circle in circles" :config="circle" />
+              <v-arrow :config="configArrow" />
+            </v-layer>
+          </v-stage>
+        </ClientOnly>
         <v-btn @click="clearCircles">
             Clear Circles
-          </v-btn>
-        </ClientOnly>
+        </v-btn>
       </v-container>
     </v-main>
   </v-app>
