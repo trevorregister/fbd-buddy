@@ -1,17 +1,21 @@
 <template>
-  <div>
-    <ClientOnly>
-      <v-stage :config="configKonva" @click="drawCircle"> 
-        <v-layer>
-          <v-circle v-for="circle in circles" :config="circle" />
-          <v-arrow :config="configArrow" />
-        </v-layer>
-      </v-stage>
-      <button @click="clearCircles">
-          Clear Circles
-        </button>
-    </ClientOnly>
-  </div>
+  <v-app>
+    <v-main>
+      <v-container>
+        <ClientOnly>
+          <v-stage :config="configKonva" @click="drawCircle"> 
+          <v-layer>
+            <v-circle v-for="circle in circles" :config="circle" />
+            <v-arrow :config="configArrow" />
+          </v-layer>
+        </v-stage>
+        <v-btn @click="clearCircles">
+            Clear Circles
+          </v-btn>
+        </ClientOnly>
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
 
 <script setup>
