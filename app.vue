@@ -4,13 +4,13 @@
       <v-container>
         <ClientOnly>
           <v-stage 
-            :config="configKonva" 
-            @dblclick="drawCircle"
+            :config="configStage" 
             @click="drawArrow"
           > 
             <v-layer>
               <v-circle v-for="circle in circles" :config="circle" />
               <v-arrow v-for="arrow in arrows" :config="arrow" />
+              <v-circle v-for="gridPoint in grid" :config="gridPoint" />
             </v-layer>
           </v-stage>
         </ClientOnly>
@@ -23,14 +23,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const clickCoords = ref({x: 0, y: 0})
 const circles = ref([])
 const arrows = ref([])
+const grid = ref([])
 const arrowPointsBeingDrawn = ref([])
+const arrowBeingDrawn = ref({  
+    fill: 'black',
+    stroke: 'black',
+    strokeWidth: 4,
+    points: [],
+  })
 const isDrawingArrow = ref(false)
 
-const configKonva = {
+const configStage = {
   width: 500,
   height: 500,
 }
@@ -57,20 +62,33 @@ const drawArrow = (e) => {
     fill: 'black',
     stroke: 'black',
     strokeWidth: 4,
-    points: []
+    points: [],
   }
   const stage = e.target.getStage()
   const pointerPosition = stage.getPointerPosition()
-  clickCoords.value = pointerPosition
 
   if (!isDrawingArrow.value) {
-    arrowPointsBeingDrawn.value = [pointerPosition.x, pointerPosition.y]
+    arrowBeingDrawn.value.points = [pointerPosition.x, pointerPosition.y]
     isDrawingArrow.value = true
   } else {
-    arrow.points = [...arrowPointsBeingDrawn.value, pointerPosition.x, pointerPosition.y]
+    arrow.points = [...arrowBeingDrawn.value.points, pointerPosition.x, pointerPosition.y]
     arrows.value.push(arrow)
-    arrowPointsBeingDrawn.value = []
+    arrowBeingDrawn.value.points = []
     isDrawingArrow.value = false
+  }
+}
+
+const drawGrid = () => {
+  for (let i = 0; i < configStage.width; i += 50) {
+    for (let j = 0; j < configStage.height; j += 50) {
+      const gridPoint = {
+        x: i+5,
+        y: j+5,
+        fill: 'lightgrey',
+        radius: 5,
+      }
+      grid.value.push(gridPoint)
+    }
   }
 }
 
@@ -79,5 +97,9 @@ const clearCanvas = () => {
   arrows.value = []
   arrowPointsBeingDrawn.value = []
 }
+
+onMounted(() => {
+  drawGrid()
+})
   
 </script>
