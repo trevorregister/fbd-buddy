@@ -5,6 +5,12 @@
         :key="`${point.x},${point.y}`"
         :config="point"
       />
+      <v-text :config="originLabel" />
+      <v-text
+      v-for="label in axisLabels"
+      :key="label.text"
+      :config="label"
+    />
     </v-group>
   </template>
   
@@ -35,7 +41,48 @@
     return points
   })
   
+  const { width, height } = useCanvasDimensions().value
+
+  const originLabel = computed(() => {
+  const { x, y } = gridToCanvasCoordinates(5, -5)
+  return {
+    x,
+    y,
+    text: '(0,0)',
+    fontSize: 12,
+    fill: 'red',
+  }
+})
  
-  
+const axisLabels = computed(() => {
+  const labels = []
+  for (let x = -Math.floor(width / 2); x <= Math.floor(width / 2); x += props.spacing) {
+    if (x !== 0) {
+      const { x: canvasX, y: canvasY } = gridToCanvasCoordinates(x, 0)
+      labels.push({
+        x: canvasX,
+        y: canvasY + 15,
+        text: x.toString(),
+        fontSize: 10,
+        fill: 'blue',
+        align: 'center',
+      })
+    }
+  }
+  for (let y = -Math.floor(height / 2); y <= Math.floor(height / 2); y += props.spacing) {
+    if (y !== 0) {
+      const { x: canvasX, y: canvasY } = gridToCanvasCoordinates(0, y)
+      labels.push({
+        x: canvasX - 15,
+        y: canvasY,
+        text: y.toString(),
+        fontSize: 10,
+        fill: 'blue',
+        align: 'right',
+      })
+    }
+  }
+  return labels
+})  
 
   </script>
