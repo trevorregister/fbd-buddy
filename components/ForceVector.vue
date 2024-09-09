@@ -1,23 +1,30 @@
 <template>
     <v-arrow :config="arrowConfig"/>
+    <v-circle 
+        :x="arrowConfig.points[2]" 
+        :y="arrowConfig.points[3]" 
+        :radius="8"
+        :fill="'red'"
+        :draggable="true"/>
 </template>
 <script setup>
 import { gridToCanvasCoordinates } from '~/utils/coordinates'
-import Point from './Point.vue'
 const props = defineProps({
     tail: {
-        type: Point,
-        required: true,
+        x: {type: Number, required: true},
+        y: {type: Number, required: true},
     },
     head: {
-        type: Point,
-        required: true,
+        x: {type: Number, required: true},
+        y: {type: Number, required: true},
     },
 })
 
 const arrowConfig = computed(() => {
-    const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y, props.canvasWidth, props.canvasHeight)
-    const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y, props.canvasWidth, props.canvasHeight)
+/*     const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y) */
+    const tailPoint = {x: props.tail.x, y: props.tail.y}
+    const headPoint = {x: props.head.x, y: props.head.y}
     return {
     fill: 'black',
     stroke: 'black',
