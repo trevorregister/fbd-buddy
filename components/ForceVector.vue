@@ -1,34 +1,46 @@
 <template>
-    <v-arrow :config="config"/>
+    <v-arrow :config="arrowConfig"/>
+    <v-circle 
+        :x="arrowConfig.points[2]" 
+        :y="arrowConfig.points[3]" 
+        :radius="8"
+        :fill="'red'"
+        :draggable="true"/>
 </template>
 <script setup>
-import Point from './Point.vue'
+import { gridToCanvasCoordinates } from '~/utils/coordinates'
 const props = defineProps({
-    startPoint: {
-        type: Point,
-        required: true,
+    tail: {
+        x: {type: Number, required: true},
+        y: {type: Number, required: true},
     },
-    endPoint: {
-        type: Point,
-        required: true,
+    head: {
+        x: {type: Number, required: true},
+        y: {type: Number, required: true},
     },
 })
 
-const config = {
+const arrowConfig = computed(() => {
+/*     const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y) */
+    const tailPoint = {x: props.tail.x, y: props.tail.y}
+    const headPoint = {x: props.head.x, y: props.head.y}
+    return {
     fill: 'black',
     stroke: 'black',
     strokeWidth: 2,
     points: [
-        props.startPoint.x, 
-        props.startPoint.y, 
-        props.endPoint.x, 
-        props.endPoint.y
+        tailPoint.x, 
+        tailPoint.y, 
+        headPoint.x, 
+        headPoint.y
     ],
 }
+})
 
 const magnitude = computed(() => {
-    const dx = props.endPoint.x - props.startPoint.x
-    const dy = props.endPoint.y - props.startPoint.y
+    const dx = props.head.x - props.tail.x
+    const dy = props.head.y - props.tail.y
     return Math.sqrt(dx * dx + dy * dy)
 })
 </script>

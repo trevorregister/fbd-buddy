@@ -1,39 +1,27 @@
 <template>
-    <v-circle :config="config"/>
-</template>
-
-<script setup>
-const props = defineProps({
-    config: {
-    x: {
-        type: Number,
-        required: true,
-    },
-    y: {
-        type: Number,
-        required: true,
-    },
-    radius: {
-        type: Number,
-        default: 5,
-    },
-    fill: {
-        type: String,
-        default: 'lightgrey',
-    },
-    }
-})
-
-const config = computed(() => {
+    <v-circle :config="circleConfig" />
+  </template>
+  
+  <script setup>
+  import { computed } from 'vue'
+  import { gridToCanvasCoordinates } from '~/utils/coordinates'
+  
+  const props = defineProps({
+    x: { type: Number, required: true },
+    y: { type: Number, required: true },
+    radius: { type: Number, default: 5 },
+    fill: { type: String, default: 'red' },
+    canvasWidth: { type: Number, required: true },
+    canvasHeight: { type: Number, required: true },
+  })
+  
+  const circleConfig = computed(() => {
+    const { x, y } = gridToCanvasCoordinates(props.x, props.y, props.canvasWidth, props.canvasHeight)
     return {
-        x: props.config.x,
-        y: props.config.y,
-        radius: props.config.radius ?? 5,
-        fill: props.config.fill ?? 'lightgrey',
+      x,
+      y,
+      radius: props.radius,
+      fill: props.fill,
     }
-})
-
-onMounted(() => {
-    console.log(`POINT CREATED ${props.config.radius} ${props.config.fill}`)
-})
-</script>
+  })
+  </script>

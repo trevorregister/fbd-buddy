@@ -3,14 +3,26 @@
     <v-main>
       <v-container>
         <ClientOnly>
-          <v-stage :config="configStage" > 
+          <v-stage :config="configStage">
             <v-layer>
-              <point v-for="gridPoint in grid" :config="gridPoint" />
+              <Grid :spacing="50" />
+              <Point :x="10" :y="20" />
+              <ForceVector v-for="vector in forceVectors" 
+                :tail="vector.tail" 
+                :head="vector.head" 
+              />
+              <!-- Add more points and arrows as needed -->
             </v-layer>
           </v-stage>
         </ClientOnly>
-        <v-btn @click="clearCanvas">
-            Clear Canvas
+        <v-btn @click="clearForceVectors">
+          Clear Vectors
+        </v-btn>
+        <v-btn @click="addForceVector">
+          Add Force Vector
+        </v-btn>
+        <v-btn @click="incrementX">
+          Increment X
         </v-btn>
       </v-container>
     </v-main>
@@ -18,35 +30,39 @@
 </template>
 
 <script setup>
-import ForceVector from './components/ForceVector.vue'
-import Point from './components/Point.vue'
-const points = ref([])
-const forces = ref([])
-const grid = ref([])
+import { ref } from 'vue'
+import Grid from '~/components/Grid.vue'
+import Point from '~/components/Point.vue'
+import ForceVector from '~/components/ForceVector.vue'
+import { provideCanvasDimensions } from '~/composables/useCanvasDimensions'
+
 const configStage = {
   width: 500,
   height: 500,
 }
+const forceVectors = ref([])
 
-const drawGrid = () => {
-  for (let i = 50; i <=configStage.width; i += 50) {
-    for (let j = 50; j <= configStage.height; j += 50) {
-      const gridPoint = {
-        x: i+5,
-        y: j+5,
-      }
-      grid.value.push(gridPoint)
-    }
+const addForceVector = () => {
+  // keeping it simple for now
+  forceVectors.value.push({ 
+    tail: { x: 0, y: 0 }, 
+    head: { x: 50, y: 50 } 
+  })
+}
+
+const clearForceVectors = () => {
+  forceVectors.value = []
+}
+
+const incrementX = () => {
+  if(forceVectors.value.length > 0) {
+    forceVectors.value[0].head.x += 50
   }
 }
 
-const clearCanvas = () => {
-  points.value = []
-  forces.value = []
-}
 
-onMounted(() => {
-  drawGrid()
-})
-  
+// Provide canvas dimensions to all child components
+provideCanvasDimensions(configStage.width, configStage.height)
+
+// ... rest of your script
 </script>
