@@ -17,7 +17,7 @@
     width: { type: Number, default: 500 },
     height: { type: Number, default: 500 },
     spacing: { type: Number, default: 50 },
-    dotRadius: { type: Number, default: 2 },
+    dotRadius: { type: Number, default: 4 },
   })
   
   const gridPoints = computed(() => {
@@ -29,7 +29,7 @@
           x: canvasX,
           y: canvasY,
           radius: props.dotRadius,
-          fill: 'lightgray',
+          fill: x === 0 && y === 0 ? 'red' : 'lightgray',
         })
       }
     }
@@ -38,20 +38,22 @@
   
   const originLabel = computed(() => {
     const { x, y } = gridToCanvasCoordinates(5, -5, props.width, props.height)
+    if (x === 0 && y === 0) {
     return {
       x,
       y,
       text: '0,0',
       fontSize: 12,
       fill: 'red',
-    }
+    }}
+    return null
   })
   
   const coordinateLabels = computed(() => {
     const labels = []
     for (let x = -Math.floor(props.width / 2); x <= Math.floor(props.width / 2); x += props.spacing) {
       for (let y = -Math.floor(props.height / 2); y <= Math.floor(props.height / 2); y += props.spacing) {
-        if (x !== 0 || y !== 0) {
+        if (x == 0 && y == 0) {
           const { x: canvasX, y: canvasY } = gridToCanvasCoordinates(x + 5, y - 5, props.width, props.height)
           labels.push({
             x: canvasX,
