@@ -6,7 +6,6 @@
           <v-stage :config="configStage">
             <v-layer>
               <Grid :spacing="50" />
-              <Point :x="10" :y="20" />
               <ForceVector v-for="vector in forceVectors" 
                 :tail="vector.tail" 
                 :head="vector.head" 

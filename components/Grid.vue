@@ -5,12 +5,12 @@
         :key="`${point.x},${point.y}`"
         :config="point"
       />
-      <v-text :config="originLabel" />
+<!--       <v-text :config="originLabel" />
       <v-text
       v-for="label in axisLabels"
       :key="label.text"
       :config="label"
-    />
+    /> -->
     </v-group>
   </template>
   
