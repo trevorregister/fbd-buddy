@@ -1,34 +1,39 @@
 <template>
-    <v-arrow :config="config"/>
+    <v-arrow :config="arrowConfig"/>
 </template>
 <script setup>
+import { gridToCanvasCoordinates } from '~/utils/coordinates'
 import Point from './Point.vue'
 const props = defineProps({
-    startPoint: {
+    tail: {
         type: Point,
         required: true,
     },
-    endPoint: {
+    head: {
         type: Point,
         required: true,
     },
 })
 
-const config = {
+const arrowConfig = computed(() => {
+    const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y, props.canvasWidth, props.canvasHeight)
+    const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y, props.canvasWidth, props.canvasHeight)
+    return {
     fill: 'black',
     stroke: 'black',
     strokeWidth: 2,
     points: [
-        props.startPoint.x, 
-        props.startPoint.y, 
-        props.endPoint.x, 
-        props.endPoint.y
+        tailPoint.x, 
+        tailPoint.y, 
+        headPoint.x, 
+        headPoint.y
     ],
 }
+})
 
 const magnitude = computed(() => {
-    const dx = props.endPoint.x - props.startPoint.x
-    const dy = props.endPoint.y - props.startPoint.y
+    const dx = props.head.x - props.tail.x
+    const dy = props.head.y - props.tail.y
     return Math.sqrt(dx * dx + dy * dy)
 })
 </script>
