@@ -10,9 +10,7 @@
     x: { type: Number, required: true },
     y: { type: Number, required: true },
     radius: { type: Number, default: 5 },
-    fill: { type: String, default: 'red' },
-    canvasWidth: { type: Number, required: true },
-    canvasHeight: { type: Number, required: true },
+    fill: { type: String, default: 'red' }
   })
   
   const circleConfig = computed(() => {
