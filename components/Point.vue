@@ -16,7 +16,7 @@
   })
   
   const circleConfig = computed(() => {
-    const { x, y } = gridToCanvasCoordinates(props.x, props.y, props.canvasWidth, props.canvasHeight)
+    const { x, y } = gridToCanvasCoordinates(props.x, props.y)
     return {
       x,
       y,

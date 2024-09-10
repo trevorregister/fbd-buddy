@@ -23,8 +23,8 @@ const props = defineProps({
 const arrowConfig = computed(() => {
 /*     const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)
     const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y) */
-    const tailPoint = {x: props.tail.x, y: props.tail.y}
-    const headPoint = {x: props.head.x, y: props.head.y}
+    const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y)
     return {
     fill: 'black',
     stroke: 'black',
