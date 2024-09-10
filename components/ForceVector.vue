@@ -8,6 +8,7 @@
         :fill="'black'"
         :draggable="true"
         @dragmove="dragCircle"
+        @mouseup="onDragEnd"
         />
 </template>
 <script setup>
@@ -23,6 +24,10 @@ const props = defineProps({
         x: {type: Number, required: true},
         y: {type: Number, required: true},
     },
+    id: {
+        type: String,
+        required: true
+    }
 })
 
 const dragCircle = (event) => {
@@ -38,6 +43,11 @@ const dragCircle = (event) => {
         )
     }
 }
+
+const onDragEnd = (event) => {
+    
+}
+
 
 const arrowConfig = computed(() => {
     const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)

@@ -6,9 +6,10 @@
           <v-stage :config="configStage">
             <v-layer>
               <Grid :spacing="50" />
-              <ForceVector v-for="vector in forceVectors" 
+              <ForceVector v-for="vector in forceVectors" :key="vector.id"
                 :tail="vector.tail" 
                 :head="vector.head" 
+                :id="vector.id"
               />
               <!-- Add more points and arrows as needed -->
             </v-layer>
@@ -20,6 +21,9 @@
         <v-btn @click="addForceVector">
           Add Force Vector
         </v-btn>
+        <p>
+          vectors: {{ forceVectors }}
+        </p>
       </v-container>
     </v-main>
   </v-app>
@@ -42,7 +46,8 @@ const addForceVector = () => {
   // keeping it simple for now
   forceVectors.value.push({ 
     tail: { x: 0, y: 0 }, 
-    head: { x: 50, y: 50 } 
+    head: { x: 50, y: 50 },
+    id: Math.random().toString(36).substring(2, 6)
   })
 }
 
