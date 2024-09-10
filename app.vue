@@ -10,7 +10,8 @@
               <ForceVector v-for="vector in forceVectors" 
                 :tail="vector.tail" 
                 :head="vector.head" 
-              />
+                :showComponents="showComponents"
+              />  
               <!-- Add more points and arrows as needed -->
             </v-layer>
           </v-stage>
@@ -24,6 +25,10 @@
         <v-btn @click="incrementX">
           Increment X
         </v-btn>
+        <v-checkbox
+          v-model="showComponents"
+          label="Show Vector Components"
+        ></v-checkbox>
       </v-container>
     </v-main>
   </v-app>
@@ -36,6 +41,8 @@ import Point from '~/components/Point.vue'
 import ForceVector from '~/components/ForceVector.vue'
 import { provideCanvasDimensions } from '~/composables/useCanvasDimensions'
 
+const showComponents = ref(false) 
+
 const configStage = {
   width: 500,
   height: 500,
@@ -43,8 +50,8 @@ const configStage = {
 const forceVectors = ref([])
 
 const addForceVector = () => {
-  // keeping it simple for now
   forceVectors.value.push({ 
+    id: Date.now(),  // Use timestamp as a simple unique id
     tail: { x: 0, y: 0 }, 
     head: { x: 50, y: 50 } 
   })
@@ -60,6 +67,9 @@ const incrementX = () => {
   }
 }
 
+const toggleShowComponents = () => {
+  showComponents.value = !showComponents.value
+}
 
 // Provide canvas dimensions to all child components
 provideCanvasDimensions(configStage.width, configStage.height)
