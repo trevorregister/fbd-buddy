@@ -10,6 +10,8 @@
 </template>
 <script setup>
 import { gridToCanvasCoordinates } from '~/utils/coordinates'
+
+const magnitude = ref(0)
 const props = defineProps({
     tail: {
         x: {type: Number, required: true},
@@ -26,6 +28,7 @@ const dragCircle = (event) => {
     const pointerPosition = stage.getPointerPosition()
     arrowConfig.value.points[2] = pointerPosition.x
     arrowConfig.value.points[3] = pointerPosition.y
+    magnitude.value = calculateMagnitude(arrowConfig.value.points[2] - arrowConfig.value.points[0], arrowConfig.value.points[3] - arrowConfig.value.points[1])
 }
 
 const arrowConfig = computed(() => {
@@ -44,9 +47,11 @@ const arrowConfig = computed(() => {
 }
 })
 
-const magnitude = computed(() => {
-    const dx = arrowConfig.value.points[2] - arrowConfig.value.points[0]
-    const dy = arrowConfig.value.points[3] - arrowConfig.value.points[1]
-    return Math.sqrt(dx * dx + dy * dy)
+const calculateMagnitude = (x, y) => {
+    return Math.sqrt(x * x + y * y)
+}
+
+onMounted(() => {
+    magnitude.value = calculateMagnitude(arrowConfig.value.points[2] - arrowConfig.value.points[0], arrowConfig.value.points[3] - arrowConfig.value.points[1])
 })
 </script>
