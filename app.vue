@@ -2,20 +2,39 @@
   <v-app>
     <v-main>
       <v-container>
-        <ClientOnly>
-          <v-stage :config="configStage">
-            <v-layer>
-              <Grid :spacing="50" />
-              <Point :x="10" :y="20" />
-              <ForceVector v-for="vector in forceVectors" 
-                :tail="vector.tail" 
-                :head="vector.head" 
-                :showComponents="showComponents"
-              />  
-              <!-- Add more points and arrows as needed -->
-            </v-layer>
-          </v-stage>
-        </ClientOnly>
+        <v-row>
+          <v-col>
+            <ClientOnly>
+              <v-stage :config="configStage">
+                <v-layer>
+                  <Grid :spacing="50" />
+                  <Point :x="10" :y="20" />
+                  <ForceVector v-for="vector in forceVectors" 
+                    :key="vector.id"
+                    :tail="vector.tail" 
+                    :head="vector.head" 
+                    :showComponents="showComponents"
+                  />  
+                </v-layer>
+              </v-stage>
+            </ClientOnly>
+          </v-col>
+          <v-col>
+            <ClientOnly>
+              <v-stage :config="configStage">
+                <v-layer>
+                  <Grid :spacing="50" />
+                  <ForceVector v-for="(vector, index) in cumulativeVectors" 
+                    :key="vector.id"
+                    :tail="vector.tail" 
+                    :head="vector.head" 
+                    :showComponents="showComponents"
+                  />  
+                </v-layer>
+              </v-stage>
+            </ClientOnly>
+          </v-col>
+        </v-row>
         <v-btn @click="clearForceVectors">
           Clear Vectors
         </v-btn>
@@ -35,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import Grid from '~/components/Grid.vue'
 import Point from '~/components/Point.vue'
 import ForceVector from '~/components/ForceVector.vue'
@@ -70,6 +89,22 @@ const incrementX = () => {
 const toggleShowComponents = () => {
   showComponents.value = !showComponents.value
 }
+
+const cumulativeVectors = computed(() => {
+  let cumulative = { x: 0, y: 0 };
+  return forceVectors.value.map((vector, index) => {
+    const newVector = {
+      id: `cumulative-${vector.id}`,
+      tail: { x: cumulative.x, y: cumulative.y },
+      head: { 
+        x: cumulative.x + (vector.head.x - vector.tail.x),
+        y: cumulative.y + (vector.head.y - vector.tail.y)
+      }
+    };
+    cumulative = newVector.head;
+    return newVector;
+  });
+});
 
 // Provide canvas dimensions to all child components
 provideCanvasDimensions(configStage.width, configStage.height)
