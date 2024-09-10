@@ -9,7 +9,6 @@
               <ForceVector v-for="vector in forceVectors" :key="vector.id"
                 :tail="vector.tail" 
                 :head="vector.head" 
-                :id="vector.id"
               />
               <!-- Add more points and arrows as needed -->
             </v-layer>
