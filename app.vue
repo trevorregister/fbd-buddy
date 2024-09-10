@@ -20,9 +20,6 @@
         <v-btn @click="addForceVector">
           Add Force Vector
         </v-btn>
-        <v-btn @click="incrementX">
-          Increment X
-        </v-btn>
       </v-container>
     </v-main>
   </v-app>
@@ -52,13 +49,6 @@ const addForceVector = () => {
 const clearForceVectors = () => {
   forceVectors.value = []
 }
-
-const incrementX = () => {
-  if(forceVectors.value.length > 0) {
-    forceVectors.value[0].head.x += 50
-  }
-}
-
 
 // Provide canvas dimensions to all child components
 provideCanvasDimensions(configStage.width, configStage.height)
