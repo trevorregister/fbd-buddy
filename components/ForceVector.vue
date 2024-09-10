@@ -32,7 +32,10 @@ const dragCircle = (event) => {
     if(pointerPosition.x % 50 <= 15 || pointerPosition.y % 50 <= 15) {
         arrowConfig.value.points[2] = Math.round(pointerPosition.x / 50) * 50
         arrowConfig.value.points[3] = Math.round(pointerPosition.y / 50) * 50
-        magnitude.value = calculateMagnitude(arrowConfig.value.points[2] - arrowConfig.value.points[0], arrowConfig.value.points[3] - arrowConfig.value.points[1])
+        magnitude.value = calculateMagnitude(
+            arrowConfig.value.points[2] - arrowConfig.value.points[0], 
+            arrowConfig.value.points[3] - arrowConfig.value.points[1]
+        )
     }
 }
 
@@ -57,6 +60,9 @@ const calculateMagnitude = (x, y) => {
 }
 
 onMounted(() => {
-    magnitude.value = calculateMagnitude(arrowConfig.value.points[2] - arrowConfig.value.points[0], arrowConfig.value.points[3] - arrowConfig.value.points[1])
+    magnitude.value = calculateMagnitude(
+        arrowConfig.value.points[2] - arrowConfig.value.points[0], 
+        arrowConfig.value.points[3] - arrowConfig.value.points[1]
+    )
 })
 </script>
