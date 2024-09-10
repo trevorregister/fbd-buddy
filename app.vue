@@ -47,7 +47,6 @@ const addForceVector = () => {
   forceVectors.value.push({ 
     tail: { x: 0, y: 0 }, 
     head: { x: 50, y: 50 },
-    id: Math.random().toString(36).substring(2, 6)
   })
 }
 

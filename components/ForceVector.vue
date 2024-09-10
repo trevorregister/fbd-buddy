@@ -24,10 +24,6 @@ const props = defineProps({
         x: {type: Number, required: true},
         y: {type: Number, required: true},
     },
-    id: {
-        type: String,
-        required: true
-    }
 })
 
 const dragCircle = (event) => {
