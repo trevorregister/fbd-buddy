@@ -3,10 +3,12 @@
     <v-circle 
         :x="arrowConfig.points[2]" 
         :y="arrowConfig.points[3]" 
-        :radius="10"
-        :opacity="0"
+        :radius="13"
+        :opacity="0.5"
+        :fill="'black'"
         :draggable="true"
-        @dragmove="dragCircle"/>
+        @dragmove="dragCircle"
+        />
 </template>
 <script setup>
 import { gridToCanvasCoordinates } from '~/utils/coordinates'
@@ -26,9 +28,12 @@ const props = defineProps({
 const dragCircle = (event) => {
     const stage = event.target.getStage()
     const pointerPosition = stage.getPointerPosition()
-    arrowConfig.value.points[2] = pointerPosition.x
-    arrowConfig.value.points[3] = pointerPosition.y
-    magnitude.value = calculateMagnitude(arrowConfig.value.points[2] - arrowConfig.value.points[0], arrowConfig.value.points[3] - arrowConfig.value.points[1])
+
+    if(pointerPosition.x % 50 <= 15 || pointerPosition.y % 50 <= 15) {
+        arrowConfig.value.points[2] = Math.round(pointerPosition.x / 50) * 50
+        arrowConfig.value.points[3] = Math.round(pointerPosition.y / 50) * 50
+        magnitude.value = calculateMagnitude(arrowConfig.value.points[2] - arrowConfig.value.points[0], arrowConfig.value.points[3] - arrowConfig.value.points[1])
+    }
 }
 
 const arrowConfig = computed(() => {
