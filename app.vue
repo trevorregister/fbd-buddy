@@ -22,9 +22,6 @@
         <v-btn @click="addForceVector">
           Add Force Vector
         </v-btn>
-        <p>
-          vectors: {{ forceVectors }}
-        </p>
       </v-container>
     </v-main>
   </v-app>

@@ -3,7 +3,7 @@
     <v-circle 
         :x="arrowConfig.points[2]" 
         :y="arrowConfig.points[3]" 
-        :radius="13"
+        :radius="15"
         :opacity="0"
         :fill="'black'"
         :draggable="true"
