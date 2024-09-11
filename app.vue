@@ -67,6 +67,7 @@ const handleDragEnd = (vector) => {
     console.log(forceVectors.value)
     return v
   })
+  vectorIndex.value++
 }
 
 // Provide canvas dimensions to all child components
