@@ -6,9 +6,11 @@
           <v-stage :config="configStage">
             <v-layer>
               <Grid :spacing="50" />
-              <ForceVector v-for="vector in forceVectors" :key="vector.id"
+              <ForceVector v-for="vector in forceVectors" :key="vectorIndex"
                 :tail="vector.tail" 
                 :head="vector.head" 
+                :id="vector.id"
+                @dragEnd="handleDragEnd" 
               />
               <!-- Add more points and arrows as needed -->
             </v-layer>
@@ -40,17 +42,31 @@ const configStage = {
   height: 500,
 }
 const forceVectors = ref([])
+const vectorIndex = ref(0)
 
 const addForceVector = () => {
   // keeping it simple for now
   forceVectors.value.push({ 
-    tail: { x: 0, y: 0 }, 
-    head: { x: 50, y: 50 },
+    tail: { x: 250, y: 250 }, 
+    head: { x: 250, y: 100 },
+    id: Math.random().toString(36).substring(2, 8)
   })
+  vectorIndex.value++
 }
 
 const clearForceVectors = () => {
   forceVectors.value = []
+}
+
+const handleDragEnd = (vector) => {
+  forceVectors.value = forceVectors.value.map((v) => {
+    if (v.id === vector.id) {
+      v.head = vector.head
+      v.tail = vector.tail
+    }
+    console.log(forceVectors.value)
+    return v
+  })
 }
 
 // Provide canvas dimensions to all child components
