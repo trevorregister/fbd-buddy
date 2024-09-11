@@ -49,7 +49,7 @@ const addForceVector = () => {
   forceVectors.value.push({ 
     tail: { x: 250, y: 250 }, 
     head: { x: 250, y: 100 },
-    id: Math.random().toString(36).substring(2, 8)
+    id: Date.now()
   })
   vectorIndex.value++
 }

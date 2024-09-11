@@ -4,7 +4,7 @@
         :x="arrowConfig.points[2]" 
         :y="arrowConfig.points[3]" 
         :radius="13"
-        :opacity="0.5"
+        :opacity="0"
         :fill="'black'"
         :draggable="true"
         @dragmove="dragCircle"
