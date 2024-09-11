@@ -71,6 +71,7 @@ const arrowConfig = computed(() => {
 }
 })
 
+//necessary for ensuring the draggable circle snaps back to the vector head
 const dragEnd = () => {
     const vector = {
         tail: {

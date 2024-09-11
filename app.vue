@@ -45,7 +45,6 @@ const forceVectors = ref([])
 const vectorIndex = ref(0)
 
 const addForceVector = () => {
-  // keeping it simple for now
   forceVectors.value.push({ 
     tail: { x: 250, y: 250 }, 
     head: { x: 250, y: 100 },
@@ -58,6 +57,7 @@ const clearForceVectors = () => {
   forceVectors.value = []
 }
 
+//necessary for ensuring the draggable circle snaps back to the vector head
 const handleDragEnd = (vector) => {
   forceVectors.value = forceVectors.value.map((v) => {
     if (v.id === vector.id) {
