@@ -1,72 +1,90 @@
 <template>
   <v-app>
     <v-main>
-      <v-container>
-        <v-row>
-          <v-col>
-            <ClientOnly>
-              <v-stage :config="configStage">
-                <v-layer>
-                  <Grid :spacing="50" />
-                  <Point :x="10" :y="20" />
-                  <ForceVector v-for="vector in forceVectors" 
-                    :key="vector.id"
-                    :tail="vector.tail" 
-                    :head="vector.head" 
-                    :showComponents="showComponents"
-                  />  
-                </v-layer>
-              </v-stage>
-            </ClientOnly>
-          </v-col>
-          <v-col>
-            <ClientOnly>
-              <v-stage :config="configStage">
-                <v-layer>
-                  <Grid :spacing="50" />
-                  <ForceVector v-for="(vector, index) in cumulativeVectors" 
-                    :key="vector.id"
-                    :tail="vector.tail" 
-                    :head="vector.head" 
-                    :showComponents="showComponents"
-                  />  
-                </v-layer>
-              </v-stage>
-            </ClientOnly>
-          </v-col>
-        </v-row>
-        <v-btn @click="clearForceVectors">
-          Clear Vectors
-        </v-btn>
-        <v-btn @click="addForceVector">
-          Add Force Vector
-        </v-btn>
-        <v-btn @click="incrementX">
-          Increment X
-        </v-btn>
-        <v-checkbox
-          v-model="showComponents"
-          label="Show Vector Components"
-        ></v-checkbox>
-      </v-container>
+      <CanvasProvider :width="500" :height="500">
+        <v-container>
+          <v-row>
+            <v-col>
+              <ClientOnly>
+                <v-stage :config="configStage">
+                  <v-layer>
+                    <Grid :spacing="50" />
+                    <Point :x="10" :y="20" />
+                    <ForceVector
+                      v-for="(vector, index) in forceVectors"
+                      :key="vector.id"
+                      :ref="el => { if (el) forceVectorRefs[index] = el }"
+                      :tail="vector.tail"
+                      :head="vector.head"
+                      :showComponents="showComponents"
+                    />
+                  </v-layer>
+                </v-stage>
+              </ClientOnly>
+            </v-col>
+            <v-col>
+              <ClientOnly>
+                <v-stage :config="configStage">
+                  <v-layer>
+                    <Grid :spacing="50" />
+                    <ForceVector v-for="(vector, index) in cumulativeVectors" 
+                      :key="vector.id"
+                      :tail="vector.tail" 
+                      :head="vector.head" 
+                      :showComponents="showComponents"
+                    />  
+                  </v-layer>
+                </v-stage>
+              </ClientOnly>
+            </v-col>
+          </v-row>
+          <v-btn @click="clearForceVectors">
+            Clear Vectors
+          </v-btn>
+          <v-btn @click="addForceVector">
+            Add Force Vector
+          </v-btn>
+          <v-btn @click="incrementX">
+            Increment X
+          </v-btn>
+          <v-btn @click="rotateFirstVector">
+            Rotate First Vector
+          </v-btn>
+          <v-checkbox
+            v-model="showComponents"
+            label="Show Vector Components"
+          ></v-checkbox>
+        </v-container>
+      </CanvasProvider>
     </v-main>
   </v-app>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Grid from '~/components/Grid.vue'
 import Point from '~/components/Point.vue'
 import ForceVector from '~/components/ForceVector.vue'
-import { provideCanvasDimensions } from '~/composables/useCanvasDimensions'
-
-const showComponents = ref(false) 
+import { provideCanvasDimensions, useCanvasDimensions } from '~/composables/useCanvasDimensions'
+import CanvasProvider from '~/components/CanvasProvider.vue'
 
 const configStage = {
   width: 500,
   height: 500,
 }
+
+const showComponents = ref(false) 
+
+console.log('Providing canvas dimensions:', configStage.width, configStage.height)
+
+onMounted(() => {
+  console.log('App mounted, canvas dimensions:', useCanvasDimensions().value)
+})
+
+
+
 const forceVectors = ref([])
+const forceVectorRefs = ref([])
 
 const addForceVector = () => {
   forceVectors.value.push({ 
@@ -107,7 +125,15 @@ const cumulativeVectors = computed(() => {
 });
 
 // Provide canvas dimensions to all child components
-provideCanvasDimensions(configStage.width, configStage.height)
+
+
+const rotateFirstVector = () => {
+  console.log('rotate first vector clicked')
+  if (forceVectorRefs.value[0]) {
+    console.log('startRotation sent')
+    forceVectorRefs.value[0].startRotation()
+  }
+}
 
 // ... rest of your script
 </script>
