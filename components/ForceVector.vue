@@ -1,5 +1,5 @@
 <template>
-    <v-group>
+    <v-group ref="groupRef">
         <v-arrow :config="arrowConfig"/>
         <v-circle 
             :x="arrowConfig.points[2]" 
@@ -13,7 +13,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { gridToCanvasCoordinates } from '~/utils/coordinates'
 
 const props = defineProps({
@@ -27,6 +27,8 @@ const props = defineProps({
     },
     showComponents: {type: Boolean, default: false},
 })
+
+const groupRef = ref(null)
 
 const arrowConfig = computed(() => {
     const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)
@@ -83,4 +85,31 @@ const magnitude = computed(() => {
     const dy = props.head.y - props.tail.y
     return Math.sqrt(dx * dx + dy * dy)
 })
+
+const startRotation = () => {
+    console.log("force vector start rotation")
+    if (groupRef.value) {
+        const konvaGroup = groupRef.value.getNode()
+        
+        // Calculate the center of rotation in canvas coordinates
+        const { x: centerX, y: centerY } = gridToCanvasCoordinates(0, 0)
+        
+        // Set the offset to make the group rotate around the grid origin
+        konvaGroup.offsetX(centerX)
+        konvaGroup.offsetY(centerY)
+        konvaGroup.x(centerX)
+        konvaGroup.y(centerY)
+
+        const anim = new Konva.Animation((frame) => {
+            if (frame) {
+                const angleDiff = frame.timeDiff * 90 / 1000 // 90 degrees per second
+                konvaGroup.rotate(angleDiff)
+            }
+        }, konvaGroup.getLayer())
+
+        anim.start()
+    }
+}
+
+defineExpose({ startRotation })
 </script>
