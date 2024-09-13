@@ -4,7 +4,7 @@
         :x="arrowConfig.points[2]" 
         :y="arrowConfig.points[3]" 
         :radius="15"
-        :opacity="0.5"
+        :opacity="0"
         :fill="'black'"
         :draggable="true"
         @dragmove="dragCircle"
@@ -77,8 +77,7 @@ const arrowConfig = computed(() => {
 })
 
 const xComponentConfig = computed(() => {
-/*     const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)
-    const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y) */
+    //implementation using commented section below can be used once gridToCoordinate issues are resolved
     const tailPoint = {
         x: props.tail.x,
         y: props.tail.y
@@ -96,14 +95,27 @@ const xComponentConfig = computed(() => {
             tailPoint.x,
             tailPoint.y,
             headPoint.x,
-            headPoint.y
+            tailPoint.y
         ],
     }
+/*     const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const headPoint = gridToCanvasCoordinates(props.head.x, props.tail.y)
+    return {
+        fill: 'blue',
+        stroke: 'blue',
+        strokeWidth: 1,
+        dash: [5, 5],
+        points: [
+            tailPoint.x,
+            tailPoint.y,
+            headPoint.x,
+            headPoint.y
+        ],
+    } */
 })
 
 const yComponentConfig = computed(() => {
-/*     const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)
-    const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y) */
+    //implementation using commented section below can be used once gridToCoordinate issues are resolved
     const tailPoint = {
         x: props.tail.x,
         y: props.tail.y
@@ -118,12 +130,26 @@ const yComponentConfig = computed(() => {
         strokeWidth: 1,
         dash: [5, 5],
         points: [
-            tailPoint.x,
+            headPoint.x,
             tailPoint.y,
             headPoint.x,
             headPoint.y
         ],
     }
+/*     const tailPoint = gridToCanvasCoordinates(props.head.x, props.tail.y)
+    const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y)
+    return {
+        fill: 'green',
+        stroke: 'green',
+        strokeWidth: 1,
+        dash: [5, 5],
+        points: [
+            tailPoint.x,
+            tailPoint.y,
+            headPoint.x,
+            headPoint.y
+        ],
+    } */
 })
 
 //necessary for ensuring the draggable circle snaps back to the vector head

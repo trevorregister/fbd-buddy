@@ -100,20 +100,18 @@ const toggleShowComponents = () => {
   showComponents.value = !showComponents.value
 }
 
-const canvasCorrection = 250 //needed until we can figure out the issue with gridToCanvasCoordinates
 const cumulativeVectors = computed(() => {
-  let cumulative = { x: 0, y: 0 }
+  let cumulative = { x: 250, y: 250 } //needed at 250,250 until we can figure out the issue with gridToCanvasCoordinates
   return forceVectors.value.map(v => {
     const newVector = {
       id: `cumulative-${v.id}`,
-      tail: { x: cumulative.x + canvasCorrection, y: cumulative.y + canvasCorrection },
+      tail: { x: cumulative.x, y: cumulative.y },
       head: { 
-        x: cumulative.x + (v.head.x - v.tail.x) + canvasCorrection,
-        y: cumulative.y + (v.head.y - v.tail.y) + canvasCorrection
+        x: cumulative.x + (v.head.x - v.tail.x),
+        y: cumulative.y + (v.head.y - v.tail.y)
       }
     }
     cumulative = newVector.head
-    console.log('newVector', newVector)
     return newVector
   })
 })
