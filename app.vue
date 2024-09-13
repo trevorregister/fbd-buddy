@@ -115,6 +115,4 @@ const cumulativeVectors = computed(() => {
 
 // Provide canvas dimensions to all child components
 provideCanvasDimensions(configStage.width, configStage.height)
-
-// ... rest of your script
 </script>

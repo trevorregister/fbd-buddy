@@ -53,8 +53,7 @@ const dragCircle = (event) => {
 }
 
 const arrowConfig = computed(() => {
-/*     const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)
-    const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y) */
+    //convert to use gridToCoordinate function when fixed
     const tailPoint = {
         x: props.tail.x,
         y: props.tail.y
