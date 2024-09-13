@@ -4,14 +4,18 @@
         :x="arrowConfig.points[2]" 
         :y="arrowConfig.points[3]" 
         :radius="15"
-        :opacity="0"
+        :opacity="0.5"
         :fill="'black'"
         :draggable="true"
         @dragmove="dragCircle"
         @dragend="dragEnd"
         />
+    <v-arrow v-if="props.showComponents" :config="xComponentConfig"/>
+    <v-arrow v-if="props.showComponents" :config="yComponentConfig"/>
 </template>
+
 <script setup>
+import { computed } from 'vue'
 import { gridToCanvasCoordinates } from '~/utils/coordinates'
 
 const emit = defineEmits(['dragEnd'])
@@ -25,10 +29,11 @@ const props = defineProps({
         x: {type: Number, required: true},
         y: {type: Number, required: true},
     },
+    showComponents: {type: Boolean, default: false},
     id: {
         type: String,
         required: true
-    }
+    },
 })
 
 const dragCircle = (event) => {
@@ -69,6 +74,56 @@ const arrowConfig = computed(() => {
         headPoint.y
     ],
 }
+})
+
+const xComponentConfig = computed(() => {
+/*     const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y) */
+    const tailPoint = {
+        x: props.tail.x,
+        y: props.tail.y
+    }
+    const headPoint = {
+        x: props.head.x,
+        y: props.head.y
+    }
+    return {
+        fill: 'blue',
+        stroke: 'blue',
+        strokeWidth: 1,
+        dash: [5, 5],
+        points: [
+            tailPoint.x,
+            tailPoint.y,
+            headPoint.x,
+            headPoint.y
+        ],
+    }
+})
+
+const yComponentConfig = computed(() => {
+/*     const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y) */
+    const tailPoint = {
+        x: props.tail.x,
+        y: props.tail.y
+    }
+    const headPoint = {
+        x: props.head.x,
+        y: props.head.y
+    }
+    return {
+        fill: 'green',
+        stroke: 'green',
+        strokeWidth: 1,
+        dash: [5, 5],
+        points: [
+            tailPoint.x,
+            tailPoint.y,
+            headPoint.x,
+            headPoint.y
+        ],
+    }
 })
 
 //necessary for ensuring the draggable circle snaps back to the vector head
