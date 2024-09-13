@@ -92,10 +92,6 @@ const handleDragEnd = (vector) => {
   })
   vectorIndex.value++
 }
-const toggleShowComponents = () => {
-  console.log('toggleShowComponents', showComponents.value)
-  showComponents.value = !showComponents.value
-}
 
 const cumulativeVectors = computed(() => {
   let cumulative = { x: 250, y: 250 } //needed at 250,250 until we can figure out the issue with gridToCanvasCoordinates
