@@ -47,9 +47,6 @@
           v-model="showComponents"
           label="Show Vector Components"
         ></v-checkbox>
-        <p v-for="vector in forceVectors" :key="vector.id">
-          {{ vector }}
-        </p>
       </v-container>
     </v-main>
   </v-app>
