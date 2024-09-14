@@ -8,12 +8,11 @@
               <v-stage :config="configStage">
                 <v-layer>
                   <Grid :spacing="50" />
-                  <ForceVector v-for="vector in forceVectors" :key="vectorIndex"
+                  <ForceVector v-for="vector in forceVectors" :key="vector.Grid"
                     :tail="vector.tail" 
                     :head="vector.head" 
                     :showComponents="showComponents"
                     :id="vector.id"
-                    @dragEnd="handleDragEnd"
                   />  
                 </v-layer>
               </v-stage>
@@ -25,12 +24,11 @@
                 <v-layer>
                   <Grid :spacing="50" />
                   <ForceVector v-for="vector in cumulativeVectors" 
-                    :key="vectorIndex"
+                    :key="vector.id"
                     :tail="vector.tail" 
                     :head="vector.head" 
                     :id="vector.id"
                     :showComponents="showComponents"
-                    @dragEnd="handleDragEnd"
                   />  
                 </v-layer>
               </v-stage>
@@ -66,32 +64,19 @@ const configStage = {
   height: 500,
 }
 const forceVectors = ref([])
-const vectorIndex = ref(0)
 
 const addForceVector = () => {
   forceVectors.value.push({ 
     id: Date.now().toString(),
-    tail: { x: 250, y: 250 }, 
-    head: { x: 250, y: 100 } 
+    tail: { x: 0 , y: 0 }, 
+    head: { x: 100, y:200 } 
   })
-  vectorIndex.value++
 }
 
 const clearForceVectors = () => {
   forceVectors.value = []
 }
 
-//necessary for ensuring the draggable circle snaps back to the vector head
-const handleDragEnd = (vector) => {
-  forceVectors.value = forceVectors.value.map((v) => {
-    if (v.id === vector.id) {
-      v.head = vector.head
-      v.tail = vector.tail
-    }
-    return v
-  })
-  vectorIndex.value++
-}
 
 const cumulativeVectors = computed(() => {
   let cumulative = { x: 250, y: 250 } //needed at 250,250 until we can figure out the issue with gridToCanvasCoordinates

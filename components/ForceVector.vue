@@ -17,140 +17,137 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { gridToCanvasCoordinates } from '~/utils/coordinates'
+import { computed, ref, watch } from 'vue'
+import { useCanvasDimensions } from '~/composables/useCanvasDimensions'
+import { gridToCanvasCoordinates, canvasToGridCoordinates } from '~/utils/coordinates';
 
-const emit = defineEmits(['dragEnd'])
-const magnitude = ref(0)
+const { width, height } = useCanvasDimensions()
+
 const props = defineProps({
     tail: {
-        x: {type: Number, required: true},
-        y: {type: Number, required: true},
+        type: Object,
+        required: true
     },
     head: {
-        x: {type: Number, required: true},
-        y: {type: Number, required: true},
+        type: Object,
+        required: true
     },
-    showComponents: {type: Boolean, default: false},
+    showComponents: {
+        type: Boolean,
+        default: false
+    },
     id: {
         type: String,
         required: true
-    },
+    }
 })
+
+const emit = defineEmits(['dragEnd'])
+
+
+const tail = ref(props.tail)
+const head = ref(props.head)
+
+// Watch for changes in props and update refs
+watch(() => props.tail, (newTail) => {
+    tail.value = newTail
+})
+
+watch(() => props.head, (newHead) => {
+    head.value = newHead
+})
+
+const magnitude = computed(() => {
+    const dx = head.value.x - tail.value.x
+    const dy = head.value.y - tail.value.y
+    return Math.sqrt(dx * dx + dy * dy)
+})
+
+
+// Watch for changes in initialTail and initialHead
+watch(() => props.initialTail, (newTail) => {
+    tail.value = { ...newTail }
+}, { deep: true })
+
+watch(() => props.initialHead, (newHead) => {
+    head.value = { ...newHead }
+}, { deep: true })
 
 const dragCircle = (event) => {
     const stage = event.target.getStage()
-    const pointerPosition = stage.getPointerPosition()
+    const pointerPosition = stage.getPointerPosition() // canvas coords
     const snapTolerance = 15
     
-    if(pointerPosition.x % 50 <= snapTolerance || pointerPosition.y % 50 <= snapTolerance) {
-        arrowConfig.value.points[2] = Math.round(pointerPosition.x / 50) * 50
-        arrowConfig.value.points[3] = Math.round(pointerPosition.y / 50) * 50
-        magnitude.value = calculateMagnitude(
-            arrowConfig.value.points[2] - arrowConfig.value.points[0], 
-            arrowConfig.value.points[3] - arrowConfig.value.points[1]
-        )
-        
-    }
+    // Round to nearest 50
+    const snappedX = Math.round(pointerPosition.x / 50) * 50
+    const snappedY = Math.round(pointerPosition.y / 50) * 50
+    
+    // Check if we should snap
+    const shouldSnapX = Math.abs(pointerPosition.x - snappedX) <= snapTolerance
+    const shouldSnapY = Math.abs(pointerPosition.y - snappedY) <= snapTolerance
+    
+    const gridCoords = canvasToGridCoordinates(
+        shouldSnapX ? snappedX : pointerPosition.x,
+        shouldSnapY ? snappedY : pointerPosition.y,
+    )
+    
+    head.value.x = Math.round(gridCoords.x)
+    head.value.y = Math.round(gridCoords.y)
+    
+    console.log('Pointer:', pointerPosition, 'Grid:', gridCoords, 'Head:', head.value)
 }
 
 const arrowConfig = computed(() => {
-    //convert to use gridToCoordinate function when fixed
-    const tailPoint = {
-        x: props.tail.x,
-        y: props.tail.y
-    }
-    const headPoint = {
-        x: props.head.x,
-        y: props.head.y
-    }
+    const tailCanvasPoint = gridToCanvasCoordinates(tail.value.x, tail.value.y)
+    const headCanvasPoint = gridToCanvasCoordinates(head.value.x, head.value.y)
+
     return {
-    fill: 'black',
-    stroke: 'black',
-    strokeWidth: 2,
-    points: [
-        tailPoint.x, 
-        tailPoint.y, 
-        headPoint.x, 
-        headPoint.y
-    ],
-}
+        fill: 'black',
+        stroke: 'black',
+        strokeWidth: 2,
+        points: [
+            tailCanvasPoint.x,
+            tailCanvasPoint.y,
+            headCanvasPoint.x,
+            headCanvasPoint.y
+        ],
+    }
 })
 
 const xComponentConfig = computed(() => {
-    //implementation using commented section below can be used once gridToCoordinate issues are resolved
-    const tailPoint = {
-        x: props.tail.x,
-        y: props.tail.y
-    }
-    const headPoint = {
-        x: props.head.x,
-        y: props.head.y
-    }
+    const tailCanvasPoint = gridToCanvasCoordinates(tail.value.x, tail.value.y)
+    const headCanvasPoint = gridToCanvasCoordinates(head.value.x, tail.value.y)
+    
     return {
         fill: 'blue',
         stroke: 'blue',
         strokeWidth: 1,
         dash: [5, 5],
         points: [
-            tailPoint.x,
-            tailPoint.y,
-            headPoint.x,
-            tailPoint.y
+            tailCanvasPoint.x,
+            tailCanvasPoint.y,
+            headCanvasPoint.x,
+            tailCanvasPoint.y
         ],
     }
-/*     const tailPoint = gridToCanvasCoordinates(props.tail.x, props.tail.y)
-    const headPoint = gridToCanvasCoordinates(props.head.x, props.tail.y)
-    return {
-        fill: 'blue',
-        stroke: 'blue',
-        strokeWidth: 1,
-        dash: [5, 5],
-        points: [
-            tailPoint.x,
-            tailPoint.y,
-            headPoint.x,
-            headPoint.y
-        ],
-    } */
 })
 
 const yComponentConfig = computed(() => {
-    //implementation using commented section below can be used once gridToCoordinate issues are resolved
-    const tailPoint = {
-        x: props.tail.x,
-        y: props.tail.y
-    }
-    const headPoint = {
-        x: props.head.x,
-        y: props.head.y
-    }
+    const tailCanvasPoint = gridToCanvasCoordinates(head.value.x, tail.value.y)
+    const headCanvasPoint = gridToCanvasCoordinates(head.value.x, head.value.y)
+    
     return {
-        fill: 'green',
-        stroke: 'green',
+        fill: 'blue',
+        stroke: 'blue',
         strokeWidth: 1,
         dash: [5, 5],
         points: [
-            headPoint.x,
-            tailPoint.y,
-            headPoint.x,
-            headPoint.y
+            tailCanvasPoint.x,
+            tailCanvasPoint.y,
+            headCanvasPoint.x,
+            headCanvasPoint.y
         ],
     }
-/*     const tailPoint = gridToCanvasCoordinates(props.head.x, props.tail.y)
-    const headPoint = gridToCanvasCoordinates(props.head.x, props.head.y)
-    return {
-        fill: 'green',
-        stroke: 'green',
-        strokeWidth: 1,
-        dash: [5, 5],
-        points: [
-            tailPoint.x,
-            tailPoint.y,
-            headPoint.x,
-            headPoint.y
-        ],
-    } */
 })
 
 const hasNoZeroComponents = computed(()=>{
@@ -174,14 +171,6 @@ const dragEnd = () => {
     }
     emit('dragEnd', vector)
 }
-const calculateMagnitude = (x, y) => {
-    return Math.sqrt(x * x + y * y)
-}
 
-onMounted(() => {
-    magnitude.value = calculateMagnitude(
-        arrowConfig.value.points[2] - arrowConfig.value.points[0], 
-        arrowConfig.value.points[3] - arrowConfig.value.points[1]
-    )
-})
+
 </script>
