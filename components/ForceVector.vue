@@ -10,8 +10,10 @@
         @dragmove="dragCircle"
         @dragend="dragEnd"
         />
-    <v-arrow v-if="props.showComponents" :config="xComponentConfig"/>
-    <v-arrow v-if="props.showComponents" :config="yComponentConfig"/>
+    <div v-if="props.showComponents && hasNoZeroComponents">
+        <v-arrow :config="xComponentConfig"/>
+        <v-arrow :config="yComponentConfig"/>
+    </div>
 </template>
 
 <script setup>
@@ -149,6 +151,12 @@ const yComponentConfig = computed(() => {
             headPoint.y
         ],
     } */
+})
+
+const hasNoZeroComponents = computed(()=>{
+    const isXComponentZero = Math.abs(props.head.y - props.tail.y) > 0
+    const isYComponentZero = Math.abs(props.head.x - props.tail.x) > 0
+    return isXComponentZero && isYComponentZero
 })
 
 //necessary for ensuring the draggable circle snaps back to the vector head
