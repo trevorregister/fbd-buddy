@@ -8,12 +8,11 @@
               <v-stage :config="configStage">
                 <v-layer>
                   <Grid :spacing="50" />
-                  <Point :x="10" :y="20" />
-                  <ForceVector v-for="vector in forceVectors" 
-                    :key="vector.id"
+                  <ForceVector v-for="vector in forceVectors" :key="vector.Grid"
                     :tail="vector.tail" 
                     :head="vector.head" 
                     :showComponents="showComponents"
+                    :id="vector.id"
                   />  
                 </v-layer>
               </v-stage>
@@ -24,10 +23,11 @@
               <v-stage :config="configStage">
                 <v-layer>
                   <Grid :spacing="50" />
-                  <ForceVector v-for="(vector, index) in cumulativeVectors" 
+                  <ForceVector v-for="vector in cumulativeVectors" 
                     :key="vector.id"
                     :tail="vector.tail" 
                     :head="vector.head" 
+                    :id="vector.id"
                     :showComponents="showComponents"
                   />  
                 </v-layer>
@@ -40,9 +40,6 @@
         </v-btn>
         <v-btn @click="addForceVector">
           Add Force Vector
-        </v-btn>
-        <v-btn @click="incrementX">
-          Increment X
         </v-btn>
         <v-checkbox
           v-model="showComponents"
@@ -70,9 +67,9 @@ const forceVectors = ref([])
 
 const addForceVector = () => {
   forceVectors.value.push({ 
-    id: Date.now(),  // Use timestamp as a simple unique id
-    tail: { x: 0, y: 0 }, 
-    head: { x: 50, y: 50 } 
+    id: Date.now().toString(),
+    tail: { x: 0 , y: 0 }, 
+    head: { x: 100, y:200 } 
   })
 }
 
@@ -80,34 +77,23 @@ const clearForceVectors = () => {
   forceVectors.value = []
 }
 
-const incrementX = () => {
-  if(forceVectors.value.length > 0) {
-    forceVectors.value[0].head.x += 50
-  }
-}
-
-const toggleShowComponents = () => {
-  showComponents.value = !showComponents.value
-}
 
 const cumulativeVectors = computed(() => {
-  let cumulative = { x: 0, y: 0 };
-  return forceVectors.value.map((vector, index) => {
+  let cumulative = { x: 0, y: 0 }
+  return forceVectors.value.map(v => {
     const newVector = {
-      id: `cumulative-${vector.id}`,
+      id: `cumulative-${v.id}`,
       tail: { x: cumulative.x, y: cumulative.y },
       head: { 
-        x: cumulative.x + (vector.head.x - vector.tail.x),
-        y: cumulative.y + (vector.head.y - vector.tail.y)
+        x: cumulative.x + (v.head.x - v.tail.x),
+        y: cumulative.y + (v.head.y - v.tail.y)
       }
-    };
-    cumulative = newVector.head;
-    return newVector;
-  });
-});
+    }
+    cumulative = newVector.head
+    return newVector
+  })
+})
 
 // Provide canvas dimensions to all child components
 provideCanvasDimensions(configStage.width, configStage.height)
-
-// ... rest of your script
 </script>

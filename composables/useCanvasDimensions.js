@@ -10,7 +10,8 @@ export function provideCanvasDimensions(width, height) {
 export function useCanvasDimensions() {
     const dimensions = inject(canvasDimensionsSymbol)
     if (!dimensions) {
-        throw new Error('Canvas dimensions not provided')
+        console.warn('Canvas dimensions not provided, using default values')
+        return ref({ width: 500, height: 500 })
     }
     return dimensions
 }
