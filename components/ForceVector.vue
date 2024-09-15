@@ -22,6 +22,7 @@ import { useCanvasDimensions } from '~/composables/useCanvasDimensions'
 import { gridToCanvasCoordinates, canvasToGridCoordinates } from '~/utils/coordinates';
 
 const { width, height } = useCanvasDimensions()
+const SNAP_TOLERANCE = 15
 
 const props = defineProps({
     tail: {
@@ -76,15 +77,13 @@ watch(() => props.initialHead, (newHead) => {
 const dragCircle = (event) => {
     const stage = event.target.getStage()
     const pointerPosition = stage.getPointerPosition() // canvas coords
-    const snapTolerance = 15
     
     // Round to nearest 50
     const snappedX = Math.round(pointerPosition.x / 50) * 50
     const snappedY = Math.round(pointerPosition.y / 50) * 50
     
-    // Check if we should snap
-    const shouldSnapX = Math.abs(pointerPosition.x - snappedX) <= snapTolerance
-    const shouldSnapY = Math.abs(pointerPosition.y - snappedY) <= snapTolerance
+    const shouldSnapX = Math.abs(pointerPosition.x - snappedX) <= SNAP_TOLERANCE
+    const shouldSnapY = Math.abs(pointerPosition.y - snappedY) <= SNAP_TOLERANCE
     
     const gridCoords = canvasToGridCoordinates(
         shouldSnapX ? snappedX : pointerPosition.x,
