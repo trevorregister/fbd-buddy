@@ -79,7 +79,7 @@ const clearForceVectors = () => {
 
 
 const cumulativeVectors = computed(() => {
-  let cumulative = { x: 250, y: 250 } //needed at 250,250 until we can figure out the issue with gridToCanvasCoordinates
+  let cumulative = { x: 0, y: 0 }
   return forceVectors.value.map(v => {
     const newVector = {
       id: `cumulative-${v.id}`,
