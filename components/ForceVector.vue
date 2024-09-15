@@ -22,7 +22,7 @@ import { useCanvasDimensions } from '~/composables/useCanvasDimensions'
 import { gridToCanvasCoordinates, canvasToGridCoordinates } from '~/utils/coordinates';
 
 const { width, height } = useCanvasDimensions()
-const SNAP_TOLERANCE = 15
+const SNAP_TOLERANCE = 25
 
 const props = defineProps({
     tail: {
