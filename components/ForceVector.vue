@@ -1,12 +1,7 @@
 <template>
     <v-arrow :config="arrowConfig"/>
     <v-circle 
-        :x="arrowConfig.points[2]" 
-        :y="arrowConfig.points[3]" 
-        :radius="15"
-        :opacity="0"
-        :fill="'black'"
-        :draggable="true"
+        :config="circleConfig"
         @dragmove="dragCircle"
         @dragend="dragEnd"
         />
@@ -22,8 +17,6 @@ import { useCanvasDimensions } from '~/composables/useCanvasDimensions'
 import { gridToCanvasCoordinates, canvasToGridCoordinates } from '~/utils/coordinates';
 
 const { width, height } = useCanvasDimensions()
-const SNAP_TOLERANCE = 25
-
 const props = defineProps({
     tail: {
         type: Object,
@@ -40,12 +33,14 @@ const props = defineProps({
     id: {
         type: String,
         required: true
+    },
+    canDrag: {
+        type: Boolean,
+        required: true
     }
 })
 
-const emit = defineEmits(['dragEnd'])
-
-
+const SNAP_TOLERANCE = 25
 const tail = ref(props.tail)
 const head = ref(props.head)
 
@@ -75,25 +70,37 @@ watch(() => props.initialHead, (newHead) => {
 }, { deep: true })
 
 const dragCircle = (event) => {
+    if(props.canDrag === false){
+        return
+    }
+
     const stage = event.target.getStage()
-    const pointerPosition = stage.getPointerPosition() // canvas coords
-    
-    // Round to nearest 50
-    const snappedX = Math.round(pointerPosition.x / 50) * 50
-    const snappedY = Math.round(pointerPosition.y / 50) * 50
-    
-    const shouldSnapX = Math.abs(pointerPosition.x - snappedX) <= SNAP_TOLERANCE
-    const shouldSnapY = Math.abs(pointerPosition.y - snappedY) <= SNAP_TOLERANCE
-    
-    const gridCoords = canvasToGridCoordinates(
-        shouldSnapX ? snappedX : pointerPosition.x,
-        shouldSnapY ? snappedY : pointerPosition.y,
-    )
-    
-    head.value.x = Math.round(gridCoords.x)
-    head.value.y = Math.round(gridCoords.y)
-    
-    console.log('Pointer:', pointerPosition, 'Grid:', gridCoords, 'Head:', head.value)
+    const pointerPosition = stage.getPointerPosition()
+
+    // Convert canvas coordinates to grid coordinates
+    let gridCoords = canvasToGridCoordinates(pointerPosition.x, pointerPosition.y)
+
+    // Snap to grid if within tolerance
+    const snappedX = Math.round(gridCoords.x / 50) * 50
+    const snappedY = Math.round(gridCoords.y / 50) * 50
+
+    if (Math.abs(gridCoords.x - snappedX) <= SNAP_TOLERANCE) {
+        gridCoords.x = snappedX
+    }
+    if (Math.abs(gridCoords.y - snappedY) <= SNAP_TOLERANCE) {
+        gridCoords.y = snappedY
+    }
+
+    // Update head position
+    head.value.x = gridCoords.x
+    head.value.y = gridCoords.y
+
+    // Update circle position
+    const canvasCoords = gridToCanvasCoordinates(gridCoords.x, gridCoords.y, )
+    event.target.position({
+        x: canvasCoords.x,
+        y: canvasCoords.y
+    })
 }
 
 const arrowConfig = computed(() => {
@@ -156,20 +163,33 @@ const hasNoZeroComponents = computed(()=>{
 })
 
 //necessary for ensuring the draggable circle snaps back to the vector head
-const dragEnd = () => {
-    const vector = {
-        tail: {
-            x: arrowConfig.value.points[0],
-            y: arrowConfig.value.points[1],
-        },
-        head: {
-            x: arrowConfig.value.points[2],
-            y: arrowConfig.value.points[3],
-        },
-        id: props.id
+const dragEnd = (event) => {
+    const headCanvasPoint = gridToCanvasCoordinates(head.value.x, head.value.y)
+    
+    // Get the Konva.Circle instance
+    const circle = event.target
+
+    // Check if it's a Konva.Circle and has the x() and y() methods
+    if (circle && typeof circle.x === 'function' && typeof circle.y === 'function') {
+        circle.x(headCanvasPoint.x)
+        circle.y(headCanvasPoint.y)
+        
+        // If using Konva v8+, you might need to call this to update the position
+        circle.getLayer()?.batchDraw()
+    } else {
+        console.error('Invalid target for dragEnd event', circle)
     }
-    emit('dragEnd', vector)
 }
 
-
+const circleConfig = computed(() => {
+    const headCanvasPoint = gridToCanvasCoordinates(head.value.x, head.value.y)
+    return {
+        x: headCanvasPoint.x,
+        y: headCanvasPoint.y,
+        radius: 15,
+        opacity: 0,
+        fill: 'black',
+        draggable: true
+    }
+})
 </script>

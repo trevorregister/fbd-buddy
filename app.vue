@@ -13,6 +13,7 @@
                     :head="vector.head" 
                     :showComponents="showComponents"
                     :id="vector.id"
+                    :canDrag="true"
                   />  
                 </v-layer>
               </v-stage>
@@ -29,6 +30,7 @@
                     :head="vector.head" 
                     :id="vector.id"
                     :showComponents="showComponents"
+                    :canDrag="false"
                   />  
                 </v-layer>
               </v-stage>
@@ -43,8 +45,7 @@
         </v-btn>
         <v-checkbox
           v-model="showComponents"
-          label="Show Vector Components"
-        ></v-checkbox>
+          label="Show Vector Components"/>
       </v-container>
     </v-main>
   </v-app>
@@ -76,7 +77,6 @@ const addForceVector = () => {
 const clearForceVectors = () => {
   forceVectors.value = []
 }
-
 
 const cumulativeVectors = computed(() => {
   let cumulative = { x: 0, y: 0 }
