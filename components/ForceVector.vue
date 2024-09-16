@@ -187,7 +187,7 @@ const circleConfig = computed(() => {
         x: headCanvasPoint.x,
         y: headCanvasPoint.y,
         radius: 15,
-        opacity: 0.2,
+        opacity: 0,
         fill: 'black',
         draggable: true
     }
