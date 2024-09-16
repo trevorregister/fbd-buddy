@@ -17,8 +17,6 @@ import { useCanvasDimensions } from '~/composables/useCanvasDimensions'
 import { gridToCanvasCoordinates, canvasToGridCoordinates } from '~/utils/coordinates';
 
 const { width, height } = useCanvasDimensions()
-const SNAP_TOLERANCE = 25
-
 const props = defineProps({
     tail: {
         type: Object,
@@ -35,11 +33,14 @@ const props = defineProps({
     id: {
         type: String,
         required: true
+    },
+    canDrag: {
+        type: Boolean,
+        required: true
     }
 })
 
-
-
+const SNAP_TOLERANCE = 25
 const tail = ref(props.tail)
 const head = ref(props.head)
 
@@ -69,9 +70,12 @@ watch(() => props.initialHead, (newHead) => {
 }, { deep: true })
 
 const dragCircle = (event) => {
+    if(props.canDrag === false){
+        return
+    }
+
     const stage = event.target.getStage()
     const pointerPosition = stage.getPointerPosition()
-    const snapTolerance = 15
 
     // Convert canvas coordinates to grid coordinates
     let gridCoords = canvasToGridCoordinates(pointerPosition.x, pointerPosition.y)
@@ -80,10 +84,10 @@ const dragCircle = (event) => {
     const snappedX = Math.round(gridCoords.x / 50) * 50
     const snappedY = Math.round(gridCoords.y / 50) * 50
 
-    if (Math.abs(gridCoords.x - snappedX) <= snapTolerance) {
+    if (Math.abs(gridCoords.x - snappedX) <= SNAP_TOLERANCE) {
         gridCoords.x = snappedX
     }
-    if (Math.abs(gridCoords.y - snappedY) <= snapTolerance) {
+    if (Math.abs(gridCoords.y - snappedY) <= SNAP_TOLERANCE) {
         gridCoords.y = snappedY
     }
 
@@ -98,8 +102,6 @@ const dragCircle = (event) => {
         y: canvasCoords.y
     })
 }
-
-
 
 const arrowConfig = computed(() => {
     const tailCanvasPoint = gridToCanvasCoordinates(tail.value.x, tail.value.y)
