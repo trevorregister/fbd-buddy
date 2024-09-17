@@ -7,7 +7,9 @@
             <ClientOnly>
               <v-stage :config="configStage">
                 <v-layer>
-                  <Grid :spacing="50" />
+                  <Grid 
+                    :spacing="50" 
+                    :hideGrid="hideGrid"/>
                   <ForceVector v-for="vector in forceVectors" :key="vector.Grid"
                     :tail="vector.tail" 
                     :head="vector.head" 
@@ -23,7 +25,10 @@
             <ClientOnly>
               <v-stage :config="configStage">
                 <v-layer>
-                  <Grid :spacing="50" />
+                  <Grid 
+                    :spacing="50"
+                    :hideGrid="hideGrid" 
+                    />
                   <ForceVector v-for="vector in cumulativeVectors" 
                     :key="vector.id"
                     :tail="vector.tail" 
@@ -37,15 +42,22 @@
             </ClientOnly>
           </v-col>
         </v-row>
-        <v-btn @click="clearForceVectors">
-          Clear Vectors
-        </v-btn>
-        <v-btn @click="addForceVector">
-          Add Force Vector
-        </v-btn>
-        <v-checkbox
-          v-model="showComponents"
-          label="Show Vector Components"/>
+        <v-row>
+          <v-btn @click="clearForceVectors">
+            Clear Vectors
+          </v-btn>
+          <v-btn @click="addForceVector">
+            Add Force Vector
+          </v-btn>
+        </v-row>
+        <v-row>
+          <v-checkbox
+            v-model="showComponents"
+            label="Show Vector Components"/>
+          <v-checkbox
+          v-model="hideGrid"
+          label="Hide Grid"/>
+        </v-row>
       </v-container>
     </v-main>
   </v-app>
@@ -59,6 +71,7 @@ import ForceVector from '~/components/ForceVector.vue'
 import { provideCanvasDimensions } from '~/composables/useCanvasDimensions'
 
 const showComponents = ref(false) 
+const hideGrid = ref(false)
 
 const configStage = {
   width: 500,

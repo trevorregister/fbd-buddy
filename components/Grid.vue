@@ -23,6 +23,7 @@
     height: { type: Number, default: 500 },
     spacing: { type: Number, default: 50 },
     dotRadius: { type: Number, default: 4 },
+    hideGrid: {type: Boolean, default: false}
   })
   
   const gridPoints = computed(() => {
@@ -30,11 +31,19 @@
     for (let x = -Math.floor(props.width / 2); x <= Math.floor(props.width / 2); x += props.spacing) {
       for (let y = -Math.floor(props.height / 2); y <= Math.floor(props.height / 2); y += props.spacing) {
         const { x: canvasX, y: canvasY } = gridToCanvasCoordinates(x, y, props.width, props.height)
+
+        let opacity = 1
+        if(props.hideGrid){
+          opacity = isOrigin(x,y)? 1: 0
+        }
+        
+        console.log(isOrigin(x,y))
         points.push({
           x: canvasX,
           y: canvasY,
-          radius: props.dotRadius,
-          fill: x === 0 && y === 0 ? 'red' : 'lightgray',
+          radius: isOrigin(x,y)? 8: props.dotRadius,
+          fill: isOrigin(x,y) ? 'black' : 'lightgray',
+          opacity: opacity,
         })
       }
     }
@@ -53,6 +62,10 @@
     fill: 'red',
   }
 })
+
+const isOrigin = (x, y) =>{
+  return x === 0 && y === 0
+}
  
 const axisLabels = computed(() => {
   const labels = []
