@@ -19,6 +19,7 @@
                     :showComponents="showComponents"
                     :id="vector.id"
                     :canDrag="true"
+                    :isHighlighted="vector.id === highlightedVectorId"
                   />  
                 </v-layer>
               </v-stage>
@@ -34,27 +35,22 @@
             </div>
             <v-window v-model="activeTab" class="grid-window">
               <v-window-item value="forceAddition">
-                <ClientOnly>
-                  <v-stage :config="configStage" class="grid-stage">
-                    <v-layer>
-                      <Grid 
-                        :spacing="50"
-                        :hideGrid="hideGrid" 
-                      />
-                      <ForceVector v-for="vector in cumulativeVectors" 
-                        :key="vector.id"
-                        :tail="vector.tail" 
-                        :head="vector.head" 
-                        :id="vector.id"
-                        :showComponents="showComponents"
-                        :canDrag="false"
-                      />  
-                    </v-layer>
-                  </v-stage>
-                </ClientOnly>
+                <ForceAdditionDiagram 
+                  :configStage="configStage"
+                  :hideGrid="hideGrid"
+                  :showComponents="showComponents"
+                  :forceVectors="forceVectors"
+                />
               </v-window-item>
               <v-window-item value="forces">
-                <p>Forces content goes here</p>
+                <ForceTable 
+                  :forceVectors="forceVectors"
+                  @addVector="addForceVector"
+                  @deleteVector="deleteForceVector"
+                  @updateVector="updateForceVector"
+                  @highlightVector="highlightVector"
+                  @unhighlightVector="unhighlightVector"
+                />
               </v-window-item>
               <v-window-item value="interaction">
                 <p>Interaction Diagram content goes here</p>
@@ -99,6 +95,8 @@ import Grid from '~/components/Grid.vue'
 import Point from '~/components/Point.vue'
 import ForceVector from '~/components/ForceVector.vue'
 import MenuBar from '~/components/MenuBar.vue'
+import ForceAdditionDiagram from '~/components/ForceAdditionDiagram.vue'
+import ForceTable from '~/components/ForceTable.vue'
 import { provideCanvasDimensions } from '~/composables/useCanvasDimensions'
 
 const showComponents = ref(false) 
@@ -111,33 +109,24 @@ const configStage = {
 
 const forceVectors = ref([])
 
-const addForceVector = () => {
-  forceVectors.value.push({ 
-    id: Date.now().toString(),
-    tail: { x: 0 , y: 0 }, 
-    head: { x: 100, y:200 } 
-  })
+const addForceVector = (newVector) => {
+  forceVectors.value.push(newVector)
+}
+
+const deleteForceVector = (id) => {
+  forceVectors.value = forceVectors.value.filter(v => v.id !== id)
+}
+
+const updateForceVector = (updatedVector) => {
+  const index = forceVectors.value.findIndex(v => v.id === updatedVector.id)
+  if (index !== -1) {
+    forceVectors.value[index] = updatedVector
+  }
 }
 
 const clearForceVectors = () => {
   forceVectors.value = []
 }
-
-const cumulativeVectors = computed(() => {
-  let cumulative = { x: 0, y: 0 }
-  return forceVectors.value.map(v => {
-    const newVector = {
-      id: `cumulative-${v.id}`,
-      tail: { x: cumulative.x, y: cumulative.y },
-      head: { 
-        x: cumulative.x + (v.head.x - v.tail.x),
-        y: cumulative.y + (v.head.y - v.tail.y)
-      }
-    }
-    cumulative = newVector.head
-    return newVector
-  })
-})
 
 provideCanvasDimensions(configStage.width, configStage.height)
 
@@ -174,6 +163,16 @@ const handleImageUpload = (event) => {
 const activeTab = ref('forceAddition')
 const tabsContainer = ref(null)
 const tabPlaceholder = ref(null)
+
+const highlightedVectorId = ref(null)
+
+const highlightVector = (id) => {
+  highlightedVectorId.value = id
+}
+
+const unhighlightVector = () => {
+  highlightedVectorId.value = null
+}
 
 onMounted(() => {
   nextTick(() => {

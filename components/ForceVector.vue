@@ -37,6 +37,10 @@ const props = defineProps({
     canDrag: {
         type: Boolean,
         required: true
+    },
+    isHighlighted: {
+        type: Boolean,
+        default: false
     }
 })
 
@@ -103,13 +107,15 @@ const dragCircle = (event) => {
     })
 }
 
+const arrowColor = computed(() => props.isHighlighted ? 'yellow' : 'black')
+
 const arrowConfig = computed(() => {
     const tailCanvasPoint = gridToCanvasCoordinates(tail.value.x, tail.value.y)
     const headCanvasPoint = gridToCanvasCoordinates(head.value.x, head.value.y)
 
     return {
-        fill: 'black',
-        stroke: 'black',
+        fill: arrowColor.value,
+        stroke: arrowColor.value,
         strokeWidth: 2,
         points: [
             tailCanvasPoint.x,
@@ -125,8 +131,8 @@ const xComponentConfig = computed(() => {
     const headCanvasPoint = gridToCanvasCoordinates(head.value.x, tail.value.y)
     
     return {
-        fill: 'blue',
-        stroke: 'blue',
+        fill: arrowColor.value,
+        stroke: arrowColor.value,
         strokeWidth: 1,
         dash: [5, 5],
         points: [
@@ -143,8 +149,8 @@ const yComponentConfig = computed(() => {
     const headCanvasPoint = gridToCanvasCoordinates(head.value.x, head.value.y)
     
     return {
-        fill: 'blue',
-        stroke: 'blue',
+        fill: arrowColor.value,
+        stroke: arrowColor.value,
         strokeWidth: 1,
         dash: [5, 5],
         points: [
