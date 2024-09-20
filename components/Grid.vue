@@ -1,6 +1,6 @@
 <template>
-    <v-group>
-      <v-circle
+    <v-group v-if="!hideGrid">
+      <v-circle 
         v-for="point in gridPoints"
         :key="`${point.x},${point.y}`"
         :config="point"
@@ -32,10 +32,6 @@
       for (let y = -Math.floor(props.height / 2); y <= Math.floor(props.height / 2); y += props.spacing) {
         const { x: canvasX, y: canvasY } = gridToCanvasCoordinates(x, y, props.width, props.height)
 
-        let opacity = 1
-        if(props.hideGrid){
-          opacity = isOrigin(x,y)? 1: 0
-        }
         
         console.log(isOrigin(x,y))
         points.push({
@@ -43,7 +39,6 @@
           y: canvasY,
           radius: isOrigin(x,y)? 8: props.dotRadius,
           fill: isOrigin(x,y) ? 'black' : 'lightgray',
-          opacity: opacity,
         })
       }
     }
