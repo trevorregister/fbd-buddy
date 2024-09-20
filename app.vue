@@ -1,5 +1,6 @@
 <template>
   <v-app>
+    <MenuBar />
     <v-main>
       <v-container>
         <v-row>
@@ -79,6 +80,7 @@ import { ref, computed, onMounted } from 'vue'
 import Grid from '~/components/Grid.vue'
 import Point from '~/components/Point.vue'
 import ForceVector from '~/components/ForceVector.vue'
+import MenuBar from '~/components/MenuBar.vue'
 import { provideCanvasDimensions } from '~/composables/useCanvasDimensions'
 
 const showComponents = ref(false) 
