@@ -4,15 +4,16 @@
     <v-main>
       <v-container>
         <v-row>
-          <v-col>
+          <v-col cols="6" class="grid-column">
+            <div ref="tabPlaceholder" class="tab-placeholder"></div>
             <ClientOnly>
-              <v-stage :config="configStage">
+              <v-stage :config="configStage" class="grid-stage">
                 <v-layer>
                   <v-image :config="backgroundConfig" />
                   <Grid 
                     :spacing="50" 
                     :hideGrid="hideGrid"/>
-                  <ForceVector v-for="vector in forceVectors" :key="vector.Grid"
+                  <ForceVector v-for="vector in forceVectors" :key="vector.id"
                     :tail="vector.tail" 
                     :head="vector.head" 
                     :showComponents="showComponents"
@@ -23,25 +24,42 @@
               </v-stage>
             </ClientOnly>
           </v-col>
-          <v-col>
-            <ClientOnly>
-              <v-stage :config="configStage">
-                <v-layer>
-                  <Grid 
-                    :spacing="50"
-                    :hideGrid="hideGrid" 
-                    />
-                  <ForceVector v-for="vector in cumulativeVectors" 
-                    :key="vector.id"
-                    :tail="vector.tail" 
-                    :head="vector.head" 
-                    :id="vector.id"
-                    :showComponents="showComponents"
-                    :canDrag="false"
-                  />  
-                </v-layer>
-              </v-stage>
-            </ClientOnly>
+          <v-col cols="6" class="grid-column">
+            <div ref="tabsContainer" class="tabs-container">
+              <v-tabs v-model="activeTab">
+                <v-tab value="interaction">Interaction Diagram</v-tab>
+                <v-tab value="forces">Forces</v-tab>
+                <v-tab value="forceAddition">Force Addition Diagram</v-tab>
+              </v-tabs>
+            </div>
+            <v-window v-model="activeTab" class="grid-window">
+              <v-window-item value="forceAddition">
+                <ClientOnly>
+                  <v-stage :config="configStage" class="grid-stage">
+                    <v-layer>
+                      <Grid 
+                        :spacing="50"
+                        :hideGrid="hideGrid" 
+                      />
+                      <ForceVector v-for="vector in cumulativeVectors" 
+                        :key="vector.id"
+                        :tail="vector.tail" 
+                        :head="vector.head" 
+                        :id="vector.id"
+                        :showComponents="showComponents"
+                        :canDrag="false"
+                      />  
+                    </v-layer>
+                  </v-stage>
+                </ClientOnly>
+              </v-window-item>
+              <v-window-item value="forces">
+                <p>Forces content goes here</p>
+              </v-window-item>
+              <v-window-item value="interaction">
+                <p>Interaction Diagram content goes here</p>
+              </v-window-item>
+            </v-window>
           </v-col>
         </v-row>
         <v-row>
@@ -51,24 +69,24 @@
           <v-btn @click="addForceVector">
             Add Force Vector
           </v-btn>
-        <v-btn @click="triggerImageUpload">
-          Upload Background Image
-        </v-btn>
-        <input
-          type="file"
-          ref="fileInput"
-          style="display: none"
-          accept="image/*"
-          @change="handleImageUpload"
-        />
+          <v-btn @click="triggerImageUpload">
+            Upload Background Image
+          </v-btn>
+          <input
+            type="file"
+            ref="fileInput"
+            style="display: none"
+            accept="image/*"
+            @change="handleImageUpload"
+          />
         </v-row>
         <v-row>
           <v-checkbox
             v-model="showComponents"
             label="Show Vector Components"/>
           <v-checkbox
-          v-model="hideGrid"
-          label="Hide Grid"/>
+            v-model="hideGrid"
+            label="Hide Grid"/>
         </v-row>
       </v-container>
     </v-main>
@@ -76,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import Grid from '~/components/Grid.vue'
 import Point from '~/components/Point.vue'
 import ForceVector from '~/components/ForceVector.vue'
@@ -90,6 +108,7 @@ const configStage = {
   width: 500,
   height: 500,
 }
+
 const forceVectors = ref([])
 
 const addForceVector = () => {
@@ -120,7 +139,6 @@ const cumulativeVectors = computed(() => {
   })
 })
 
-// Provide canvas dimensions to all child components
 provideCanvasDimensions(configStage.width, configStage.height)
 
 const backgroundImage = ref(null)
@@ -153,7 +171,61 @@ const handleImageUpload = (event) => {
   }
 }
 
+const activeTab = ref('forceAddition')
+const tabsContainer = ref(null)
+const tabPlaceholder = ref(null)
+
 onMounted(() => {
-  // ... existing code ...
+  nextTick(() => {
+    updateTabPlaceholder()
+  })
+})
+
+function updateTabPlaceholder() {
+  if (tabsContainer.value && tabPlaceholder.value) {
+    const tabHeight = tabsContainer.value.offsetHeight
+    tabPlaceholder.value.style.height = `${tabHeight}px`
+  }
+}
+
+watch(tabsContainer, (newVal) => {
+  if (newVal) {
+    nextTick(() => {
+      updateTabPlaceholder()
+    })
+  }
 })
 </script>
+
+<style scoped>
+.grid-column {
+  display: flex;
+  flex-direction: column;
+  height: 550px; /* Adjust this value as needed */
+}
+
+.grid-stage {
+  width: 100%;
+  height: 500px; /* Adjust this value to match your desired grid height */
+}
+
+.grid-window {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.v-window-item {
+  height: 100%;
+}
+
+.tab-placeholder {
+  min-height: 48px; /* Set a minimum height */
+  height: auto !important; /* Allow it to grow if needed */
+}
+
+.tabs-container {
+  display: flex;
+  flex-direction: column;
+}
+</style>

@@ -33,7 +33,6 @@
         const { x: canvasX, y: canvasY } = gridToCanvasCoordinates(x, y, props.width, props.height)
 
         
-        console.log(isOrigin(x,y))
         points.push({
           x: canvasX,
           y: canvasY,
