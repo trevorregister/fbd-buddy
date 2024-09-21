@@ -6,22 +6,25 @@
             <v-card-text>
                 <v-checkbox
                     v-model="showComponents"
-                    @change="toggleShowComponents"
                     label="Show Vector Components"/>
                 <v-checkbox
                     v-model="hideGrid"
-                    @change="toggleHideGrid"
                     label="Hide Grid"/>
             </v-card-text>
             <v-card-actions>
-                <v-btn @click="toggleShowModal">Close</v-btn>
+                <v-btn @click="saveAndClose">
+                    Save
+                </v-btn>
+                <v-btn @click="toggleShowModal">
+                    Close
+                </v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
 
 <script setup>
-const emit = defineEmits(['hideGrid', 'showComponents'])
+const emit = defineEmits(['saveSettings'])
 
 const showModal = ref(false)
 const showComponents = ref(false)
@@ -31,12 +34,13 @@ const toggleShowModal = () => {
     showModal.value = !showModal.value
 }
 
-const toggleShowComponents = () => {
-    console.log(showComponents.value)
-    emit('showComponents')
-}
-const toggleHideGrid = () => {
-    emit('hideGrid')
+const saveAndClose = () => {
+    const settings = {
+        newShowComponents: showComponents.value,
+        newHideGrid: hideGrid.value
+    }
+    emit('saveSettings', settings)
+    showModal.value = !showModal.value
 }
 
 </script>

@@ -4,9 +4,7 @@
     <v-main>
       <v-container>
         <v-row>
-            <SettingsModal
-              @hide-grid="handleHideGrid"
-              @show-components="handleShowComponents"/>
+          <SettingsModal @save-settings="handleSaveSettings"/>
         </v-row>
         <v-row>
           <v-col cols="6" class="grid-column">
@@ -101,7 +99,6 @@ import SettingsModal from '~/components/SettingsModal.vue'
 
 const showComponents = ref(false) 
 const hideGrid = ref(false)
-const showSettingsModal = ref(true)
 
 const configStage = {
   width: 500,
@@ -122,12 +119,10 @@ const clearForceVectors = () => {
   forceVectors.value = []
 }
 
-const handleHideGrid = () => {
-  hideGrid.value = !hideGrid.value
-}
-
-const handleShowComponents = () => {
-  showComponents.value = !showComponents.value
+const handleSaveSettings = (settings) => {
+  const {newShowComponents, newHideGrid} = settings
+  showComponents.value = newShowComponents
+  hideGrid.value = newHideGrid
 }
 
 const cumulativeVectors = computed(() => {
