@@ -4,7 +4,9 @@
     <v-main>
       <v-container>
         <v-row>
-            <SettingsModal/>
+            <SettingsModal
+              @hide-grid="handleHideGrid"
+              @show-components="handleShowComponents"/>
         </v-row>
         <v-row>
           <v-col cols="6" class="grid-column">
@@ -83,14 +85,6 @@
             @change="handleImageUpload"
           />
         </v-row>
-        <v-row>
-          <v-checkbox
-            v-model="showComponents"
-            label="Show Vector Components"/>
-          <v-checkbox
-            v-model="hideGrid"
-            label="Hide Grid"/>
-        </v-row>
       </v-container>
     </v-main>
   </v-app>
@@ -128,8 +122,12 @@ const clearForceVectors = () => {
   forceVectors.value = []
 }
 
-const toggleSettingsModal = () => {
-  showSettingsModal.value = !showSettingsModal.value
+const handleHideGrid = () => {
+  hideGrid.value = !hideGrid.value
+}
+
+const handleShowComponents = () => {
+  showComponents.value = !showComponents.value
 }
 
 const cumulativeVectors = computed(() => {
