@@ -4,6 +4,9 @@
     <v-main>
       <v-container>
         <v-row>
+            <SettingsModal/>
+        </v-row>
+        <v-row>
           <v-col cols="6" class="grid-column">
             <div ref="tabPlaceholder" class="tab-placeholder"></div>
             <ClientOnly>
@@ -100,9 +103,11 @@ import Point from '~/components/Point.vue'
 import ForceVector from '~/components/ForceVector.vue'
 import MenuBar from '~/components/MenuBar.vue'
 import { provideCanvasDimensions } from '~/composables/useCanvasDimensions'
+import SettingsModal from '~/components/SettingsModal.vue'
 
 const showComponents = ref(false) 
 const hideGrid = ref(false)
+const showSettingsModal = ref(true)
 
 const configStage = {
   width: 500,
@@ -121,6 +126,10 @@ const addForceVector = () => {
 
 const clearForceVectors = () => {
   forceVectors.value = []
+}
+
+const toggleSettingsModal = () => {
+  showSettingsModal.value = !showSettingsModal.value
 }
 
 const cumulativeVectors = computed(() => {
