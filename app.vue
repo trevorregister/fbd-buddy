@@ -13,6 +13,11 @@
               <v-stage :config="configStage" class="grid-stage">
                 <v-layer>
                   <v-image :config="backgroundConfig" />
+                  <Point 
+                    :x="0"
+                    :y="0"
+                    :radius="8"
+                    :fill="'black'"/>
                   <Grid 
                     :spacing="50" 
                     :hideGrid="hideGrid"/>
@@ -44,6 +49,11 @@
                         :spacing="50"
                         :hideGrid="hideGrid" 
                       />
+                      <Point 
+                        :x="0"
+                        :y="0"
+                        :radius="8"
+                        :fill="'black'"/>
                       <ForceVector v-for="vector in cumulativeVectors" 
                         :key="vector.id"
                         :tail="vector.tail" 
