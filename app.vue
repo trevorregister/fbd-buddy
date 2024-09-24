@@ -4,12 +4,20 @@
     <v-main>
       <v-container>
         <v-row>
+          <SettingsModal @save-settings="handleSaveSettings"/>
+        </v-row>
+        <v-row>
           <v-col cols="6" class="grid-column">
             <div ref="tabPlaceholder" class="tab-placeholder"></div>
             <ClientOnly>
               <v-stage :config="configStage" class="grid-stage">
                 <v-layer>
                   <v-image :config="backgroundConfig" />
+                  <Point 
+                    :x="0"
+                    :y="0"
+                    :radius="8"
+                    :fill="'black'"/>
                   <Grid 
                     :spacing="50" 
                     :hideGrid="hideGrid"/>
@@ -41,6 +49,11 @@
                         :spacing="50"
                         :hideGrid="hideGrid" 
                       />
+                      <Point 
+                        :x="0"
+                        :y="0"
+                        :radius="8"
+                        :fill="'black'"/>
                       <ForceVector v-for="vector in cumulativeVectors" 
                         :key="vector.id"
                         :tail="vector.tail" 
@@ -80,14 +93,6 @@
             @change="handleImageUpload"
           />
         </v-row>
-        <v-row>
-          <v-checkbox
-            v-model="showComponents"
-            label="Show Vector Components"/>
-          <v-checkbox
-            v-model="hideGrid"
-            label="Hide Grid"/>
-        </v-row>
       </v-container>
     </v-main>
   </v-app>
@@ -100,6 +105,7 @@ import Point from '~/components/Point.vue'
 import ForceVector from '~/components/ForceVector.vue'
 import MenuBar from '~/components/MenuBar.vue'
 import { provideCanvasDimensions } from '~/composables/useCanvasDimensions'
+import SettingsModal from '~/components/SettingsModal.vue'
 
 const showComponents = ref(false) 
 const hideGrid = ref(false)
@@ -121,6 +127,12 @@ const addForceVector = () => {
 
 const clearForceVectors = () => {
   forceVectors.value = []
+}
+
+const handleSaveSettings = (settings) => {
+  const {newShowComponents, newHideGrid} = settings
+  showComponents.value = newShowComponents
+  hideGrid.value = newHideGrid
 }
 
 const cumulativeVectors = computed(() => {
