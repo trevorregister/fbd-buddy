@@ -30,15 +30,17 @@
     const points = []
     for (let x = -Math.floor(props.width / 2); x <= Math.floor(props.width / 2); x += props.spacing) {
       for (let y = -Math.floor(props.height / 2); y <= Math.floor(props.height / 2); y += props.spacing) {
-        const { x: canvasX, y: canvasY } = gridToCanvasCoordinates(x, y, props.width, props.height)
-
-        
-        points.push({
-          x: canvasX,
-          y: canvasY,
-          radius: isOrigin(x,y)? 8: props.dotRadius,
-          fill: isOrigin(x,y) ? 'black' : 'lightgray',
-        })
+        if(isOrigin(x,y)) {
+          continue
+        } else{
+          const { x: canvasX, y: canvasY } = gridToCanvasCoordinates(x, y, props.width, props.height)
+          points.push({
+            x: canvasX,
+            y: canvasY,
+            radius: props.dotRadius,
+            fill: 'lightgray',
+          })
+        }
       }
     }
     return points
