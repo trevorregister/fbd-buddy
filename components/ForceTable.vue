@@ -75,7 +75,8 @@
       <tfoot>
         <tr>
           <td colspan="6">
-            <v-btn @click="addNewVector">Add New Vector</v-btn>
+            <v-btn @click="addNewVector">+ Add</v-btn>
+            <v-btn class='ml-2'@click="clearVectors">Clear</v-btn>
           </td>
         </tr>
       </tfoot>
@@ -150,6 +151,10 @@ const highlightVector = (id) => {
 
 const unhighlightVector = () => {
   emit('unhighlightVector')
+}
+
+const clearVectors = () => {
+  emit('clearVectors')
 }
 
 function calculateMagnitude(vector) {

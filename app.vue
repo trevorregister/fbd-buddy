@@ -81,6 +81,7 @@
                   @updateVector="updateForceVector"
                   @highlightVector="highlightVector"
                   @unhighlightVector="unhighlightVector"
+                  @clearVectors="handleClearVectors"
                 />
               </v-window-item>
               <v-window-item value="interaction">
@@ -90,12 +91,6 @@
           </v-col>
         </v-row>
         <v-row>
-          <v-btn @click="clearForceVectors">
-            Clear Vectors
-          </v-btn>
-          <v-btn @click="addForceVector">
-            Add Force Vector
-          </v-btn>
           <v-btn @click="triggerImageUpload">
             Upload Background Image
           </v-btn>
@@ -148,7 +143,7 @@ const updateForceVector = (updatedVector) => {
   }
 }
 
-const clearForceVectors = () => {
+const handleClearVectors = () => {
   forceVectors.value = []
 }
 
