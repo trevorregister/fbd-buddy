@@ -4,12 +4,12 @@
       <thead>
         <tr>
           <th>Type</th>
-          <th>Object Exerting Force</th>
-          <th>Object Experiencing Force</th>
+          <th>Exerting</th>
+          <th>Experiencing</th>
           <th v-if="isPolar">Magnitude</th>
           <th v-if="isPolar">Angle (degrees)</th>
-          <th v-if="!isPolar">X-Component</th>
-          <th v-if="!isPolar">Y-Component</th>
+          <th v-if="!isPolar">F_x</th>
+          <th v-if="!isPolar">F_y</th>
           <th>Actions</th>
         </tr>
       </thead>
