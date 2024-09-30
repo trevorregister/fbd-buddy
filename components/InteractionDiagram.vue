@@ -144,19 +144,38 @@ export default {
       this.selectedObjects = [];
     },
     getInteractionPath(interaction) {
-      const fromObject = this.objects.find(
-        (obj) => obj.id === interaction.fromObjectId
-      );
-      const toObject = this.objects.find(
-        (obj) => obj.id === interaction.toObjectId
-      );
-      if (!fromObject || !toObject) return "";
-      const controlPoint = {
-        x: (fromObject.x + toObject.x) / 2,
-        y: Math.min(fromObject.y, toObject.y) - 50,
-      };
-      return `M ${fromObject.x} ${fromObject.y} Q ${controlPoint.x} ${controlPoint.y} ${toObject.x} ${toObject.y}`;
-    },
+    const fromObject = this.objects.find(
+      (obj) => obj.id === interaction.fromObjectId
+    );
+    const toObject = this.objects.find(
+      (obj) => obj.id === interaction.toObjectId
+    );
+    if (!fromObject || !toObject) return "";
+
+    const fromPoint = this.getEllipseEdgePoint(fromObject, toObject);
+    const toPoint = this.getEllipseEdgePoint(toObject, fromObject);
+
+    const controlPoint = {
+      x: (fromPoint.x + toPoint.x) / 2,
+      y: Math.min(fromPoint.y, toPoint.y) - 50,
+    };
+    return `M ${fromPoint.x} ${fromPoint.y} Q ${controlPoint.x} ${controlPoint.y} ${toPoint.x} ${toPoint.y}`;
+  },
+
+  getEllipseEdgePoint(fromObject, toObject) {
+    const dx = toObject.x - fromObject.x;
+    const dy = toObject.y - fromObject.y;
+    const angle = Math.atan2(dy, dx);
+
+    const rx = this.objectWidth / 2;
+    const ry = this.objectHeight / 2;
+
+    const edgeX = fromObject.x + rx * Math.cos(angle);
+    const edgeY = fromObject.y + ry * Math.sin(angle);
+
+    return { x: edgeX, y: edgeY };
+  },
+
     getInteractionMidpoint(interaction) {
       const fromObject = this.objects.find(
         (obj) => obj.id === interaction.fromObjectId
