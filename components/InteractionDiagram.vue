@@ -58,10 +58,10 @@
 
     <!-- Buttons -->
     <div style="margin-top:10px;">
-      <button @click="addObject">Add Object</button>
-      <button @click="addInteraction" :disabled="selectedObjects.length !== 2">
-        Add Interaction
-      </button>
+      <v-btn @click="addObject" class="mr-4">+ Object</v-btn>
+      <v-btn @click="addInteraction" :disabled="selectedObjects.length !== 2">
+        + Interaction
+      </v-btn>
     </div>
   </div>
 </template>
