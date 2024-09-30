@@ -85,7 +85,9 @@
                 />
               </v-window-item>
               <v-window-item value="interaction">
-                <p>Interaction Diagram content goes here</p>
+                <ClientOnly>
+                  <InteractionDiagram />
+                </ClientOnly>
               </v-window-item>
             </v-window>
           </v-col>
@@ -117,6 +119,7 @@ import ForceAdditionDiagram from '~/components/ForceAdditionDiagram.vue'
 import ForceTable from '~/components/ForceTable.vue'
 import { provideCanvasDimensions } from '~/composables/useCanvasDimensions'
 import SettingsModal from '~/components/SettingsModal.vue'
+import InteractionDiagram from '~/components/InteractionDiagram.vue'
 
 const showComponents = ref(false) 
 const hideGrid = ref(false)

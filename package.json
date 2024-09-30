@@ -13,6 +13,9 @@
   "dependencies": {
     "@mdi/font": "^7.4.47",
     "canvas": "^2.11.2",
+    "draw2d": "^1.0.38",
+    "jquery": "^3.7.1",
+    "jquery-ui-dist": "^1.13.3",
     "konva": "^9.3.14",
     "nuxt": "^3.13.0",
     "sass": "^1.78.0",
