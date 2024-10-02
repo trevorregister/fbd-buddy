@@ -202,6 +202,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
+body{
+  max-width: clamp(320px, 90%, 1000px);
+}
 .grid-row {
   display: flex;
   align-items: stretch;
