@@ -6,9 +6,23 @@
         <v-row>
           <SettingsModal @save-settings="handleSaveSettings"/>
         </v-row>
-        <v-row>
+        <v-row class="grid-row">
           <v-col cols="6" class="grid-column">
-            <div ref="tabPlaceholder" class="tab-placeholder"></div>
+            <div class="grid-header">
+              <div class="free-body-diagram-label">
+                <div class="label-content">
+                  <span>Free Body Diagram for:</span>
+                  <v-text-field
+                    v-model="objectExperiencingForce"
+                    placeholder="object"
+                    dense
+                    hide-details
+                    class="ml-2"
+                    style="max-width: 200px;"
+                  ></v-text-field>
+                </div>
+              </div>
+            </div>
             <ClientOnly>
               <v-stage :config="configStage" class="grid-stage">
                 <v-layer>
@@ -34,7 +48,7 @@
             </ClientOnly>
           </v-col>
           <v-col cols="6" class="grid-column">
-            <div ref="tabsContainer" class="tabs-container">
+            <div class="grid-header">
               <v-tabs v-model="activeTab">
                 <v-tab value="interaction">Interaction Diagram</v-tab>
                 <v-tab value="forces">Forces</v-tab>
@@ -53,6 +67,7 @@
               <v-window-item value="forces">
                 <ForceTable 
                   :forceVectors="forceVectors"
+                  :objectExperiencingForce="objectExperiencingForce"
                   @addVector="addForceVector"
                   @deleteVector="deleteForceVector"
                   @updateVector="updateForceVector"
@@ -166,8 +181,6 @@ const handleImageUpload = (event) => {
 }
 
 const activeTab = ref('forceAddition')
-const tabsContainer = ref(null)
-const tabPlaceholder = ref(null)
 
 const highlightedVectorId = ref(null)
 
@@ -179,33 +192,30 @@ const unhighlightVector = () => {
   highlightedVectorId.value = null
 }
 
+const objectExperiencingForce = ref('')
+
 onMounted(() => {
   nextTick(() => {
-    updateTabPlaceholder()
+    // Removed updateTabPlaceholder function and related watch
   })
-})
-
-function updateTabPlaceholder() {
-  if (tabsContainer.value && tabPlaceholder.value) {
-    const tabHeight = tabsContainer.value.offsetHeight
-    tabPlaceholder.value.style.height = `${tabHeight}px`
-  }
-}
-
-watch(tabsContainer, (newVal) => {
-  if (newVal) {
-    nextTick(() => {
-      updateTabPlaceholder()
-    })
-  }
 })
 </script>
 
 <style scoped>
+.grid-row {
+  display: flex;
+  align-items: stretch;
+}
+
 .grid-column {
   display: flex;
   flex-direction: column;
-  height: 550px; /* Adjust this value as needed */
+}
+
+.grid-header {
+  height: 48px; /* Match the height of the tabs */
+  display: flex;
+  align-items: center;
 }
 
 .grid-stage {
@@ -223,13 +233,20 @@ watch(tabsContainer, (newVal) => {
   height: 100%;
 }
 
-.tab-placeholder {
-  min-height: 48px; /* Set a minimum height */
-  height: auto !important; /* Allow it to grow if needed */
-}
-
 .tabs-container {
   display: flex;
   flex-direction: column;
+}
+
+.free-body-diagram-label {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.label-content {
+  display: flex;
+  align-items: center;
 }
 </style>

@@ -3,68 +3,41 @@
     <v-table>
       <thead>
         <tr>
-          <th>Type</th>
-          <th>Exerting</th>
-          <th>Experiencing</th>
-          <th v-if="isPolar">Magnitude</th>
-          <th v-if="isPolar">Angle (degrees)</th>
-          <th v-if="!isPolar">F_x</th>
-          <th v-if="!isPolar">F_y</th>
+          <th>Force Name</th>
+          <th>Magnitude</th>
+          <th>Angle</th>
+          <th>Object Experiencing Force</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr 
-          v-for="vector in localForceVectors" 
-          :key="vector.id"
-          @mouseenter="highlightVector(vector.id)"
-          @mouseleave="unhighlightVector"
-        >
+        <tr v-for="vector in forceVectors" :key="vector.id">
           <td>
-            <v-select
-              v-model="vector.type"
-              :items="forceTypes"
-              @update:modelValue="updateVector(vector)"
-            ></v-select>
+            <v-text-field
+              v-model="vector.objectExperiencingForce"
+              :placeholder="objectExperiencingForce || 'Enter object'"
+              dense
+              hide-details
+            ></v-text-field>
           </td>
           <td>
             <v-text-field
-              v-model="vector.objectExerting"
-              @update:modelValue="updateVector(vector)"
+              v-model="vector.magnitude"
+              type="number"
+              @update:modelValue="updateMagnitude(vector)"
+            ></v-text-field>
+          </td>
+          <td>
+            <v-text-field
+              v-model="vector.angle"
+              type="number"
+              @update:modelValue="updateAngle(vector)"
             ></v-text-field>
           </td>
           <td>
             <v-text-field
               v-model="vector.objectExperiencing"
               @update:modelValue="updateVector(vector)"
-            ></v-text-field>
-          </td>
-          <td v-if="isPolar">
-            <v-text-field
-              v-model.number="vector.magnitude"
-              type="number"
-              @update:modelValue="updateMagnitude(vector)"
-            ></v-text-field>
-          </td>
-          <td v-if="isPolar">
-            <v-text-field
-              v-model.number="vector.angle"
-              type="number"
-              @update:modelValue="updateAngle(vector)"
-            ></v-text-field>
-          </td>
-          <td v-if="!isPolar">
-            <v-text-field
-              v-model.number="vector.xComponent"
-              type="number"
-              @update:modelValue="updateXComponent(vector)"
-            ></v-text-field>
-          </td>
-          <td v-if="!isPolar">
-            <v-text-field
-              v-model.number="vector.yComponent"
-              type="number"
-              @update:modelValue="updateYComponent(vector)"
             ></v-text-field>
           </td>
           <td>
@@ -74,9 +47,8 @@
       </tbody>
       <tfoot>
         <tr>
-          <td colspan="6">
-            <v-btn @click="addNewVector">+ Add</v-btn>
-            <v-btn class='ml-2'@click="clearVectors">Clear</v-btn>
+          <td colspan="5">
+            <v-btn @click="addNewVector">Add New Vector</v-btn>
           </td>
         </tr>
       </tfoot>
@@ -92,10 +64,8 @@
 import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
-  forceVectors: {
-    type: Array,
-    required: true
-  }
+  forceVectors: Array,
+  objectExperiencingForce: String,
 })
 
 const emit = defineEmits(['addVector', 'deleteVector', 'updateVector', 'highlightVector', 'unhighlightVector'])
@@ -204,4 +174,15 @@ const updateAngle = (vector) => {
   vector.yComponent = vector.head.y - vector.tail.y
   emit('updateVector', vector)
 }
+
+// Update vectors when objectExperiencingForce changes
+watch(() => props.objectExperiencingForce, (newValue) => {
+  if (newValue) {
+    props.forceVectors.forEach(vector => {
+      if (!vector.objectExperiencingForce) {
+        vector.objectExperiencingForce = newValue
+      }
+    })
+  }
+})
 </script>
