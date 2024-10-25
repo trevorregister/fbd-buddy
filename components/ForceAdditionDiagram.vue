@@ -10,7 +10,8 @@
           :x="0"
           :y="0"
           :radius="8"
-          :fill="'black'"/>
+          :fill="black"
+        />
         <ForceVector v-for="vector in cumulativeVectors" 
           :key="vector.id"
           :tail="vector.tail" 
@@ -19,6 +20,18 @@
           :showComponents="showComponents"
           :canDrag="false"
         />  
+        <!-- Net Force Vector -->
+        <v-arrow
+          :config="{
+            points: [netForceStart.x, netForceStart.y, netForceEnd.x, netForceEnd.y],
+            pointerLength: 10,
+            pointerWidth: 10,
+            fill: 'red',
+            stroke: 'red',
+            strokeWidth: 8,
+            dash: [10, 5],
+          }"
+        />
       </v-layer>
     </v-stage>
   </ClientOnly>
@@ -28,6 +41,7 @@
 import { computed } from 'vue'
 import Grid from '~/components/Grid.vue'
 import ForceVector from '~/components/ForceVector.vue'
+import { gridToCanvasCoordinates } from '~/utils/coordinates'
 
 const props = defineProps({
   configStage: {
@@ -62,6 +76,27 @@ const cumulativeVectors = computed(() => {
     cumulative = newVector.head
     return newVector
   })
+})
+
+const netForceStart = computed(() => {
+  if (props.forceVectors.length === 0) return { x: 0, y: 0 }
+  const firstVector = props.forceVectors[0]
+  return gridToCanvasCoordinates(firstVector.tail.x, firstVector.tail.y)
+})
+
+const netForceEnd = computed(() => {
+  if (props.forceVectors.length === 0) return { x: 0, y: 0 }
+  let sumX = 0
+  let sumY = 0
+  props.forceVectors.forEach(vector => {
+    sumX += vector.head.x - vector.tail.x
+    sumY += vector.head.y - vector.tail.y
+  })
+  const firstVector = props.forceVectors[0]
+  return gridToCanvasCoordinates(
+    firstVector.tail.x + sumX,
+    firstVector.tail.y + sumY
+  )
 })
 </script>
 
