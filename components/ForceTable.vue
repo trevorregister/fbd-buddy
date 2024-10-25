@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="force-table-container">
     <v-table>
       <thead>
         <tr>
@@ -8,10 +8,15 @@
           <th>{{ isPolar ? 'Magnitude' : 'X Component' }}</th>
           <th>{{ isPolar ? 'Angle' : 'Y Component' }}</th>
           <th>Actions</th>
+          <th>
+            <v-btn icon @click="openSettingsModal">
+              <v-icon>mdi-cog</v-icon>
+            </v-btn>
+          </th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="vector in forceVectors" :key="vector.id">
+        <tr v-for="vector in localForceVectors" :key="vector.id">
           <td class="align-center">
             <v-text-field
               v-model="vector.name"
@@ -50,19 +55,36 @@
             <v-btn @click="deleteVector(vector.id)" size="small">Delete</v-btn>
           </td>
         </tr>
-      </tbody>
-      <tfoot>
-        <tr>
-          <td colspan="5">
-            <v-btn @click="addNewVector">Add New Vector</v-btn>
-          </td>
+        <tr class="net-force-row">
+          <td>Net Force</td>
+          <td></td>
+          <td>{{ isPolar ? netForceMagnitude : netForceX }}</td>
+          <td>{{ isPolar ? netForceAngle : netForceY }}</td>
+          <td></td>
+          <td></td>
         </tr>
-      </tfoot>
+      </tbody>
     </v-table>
-    <v-switch
-      v-model="isPolar"
-      :label="isPolar ? 'Polar Coordinates' : 'Cartesian Coordinates'"
-    ></v-switch>
+    
+    <div class="controls-container">
+      <v-btn @click="addNewVector" color="primary">Add New Force</v-btn>
+    </div>
+
+    <v-dialog v-model="settingsModalOpen" max-width="400px">
+      <v-card>
+        <v-card-title>Settings</v-card-title>
+        <v-card-text>
+          <v-switch
+            v-model="isPolar"
+            :label="isPolar ? 'Polar Coordinates' : 'Cartesian Coordinates'"
+          ></v-switch>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="settingsModalOpen = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -76,31 +98,23 @@ const props = defineProps({
 
 const emit = defineEmits(['addVector', 'deleteVector', 'updateVector', 'highlightVector', 'unhighlightVector'])
 
-const forceTypes = [
-  'Gravitational',
-  'Electrostatic',
-  'Normal',
-  'Frictional',
-  'Magnetic'
-]
-
 const isPolar = ref(false)
+const settingsModalOpen = ref(false)
 
-const localForceVectors = ref([])
-
-const roundToTwoDecimals = (value) => {
-  return Number(value).toFixed(2);
-}
-
-watch(() => props.forceVectors, (newVectors) => {
-  localForceVectors.value = newVectors.map(vector => ({
+// Create a reactive copy of forceVectors
+const localForceVectors = computed(() => 
+  props.forceVectors.map(vector => ({
     ...vector,
     magnitude: calculateMagnitude(vector),
     angle: calculateAngle(vector),
     xComponent: vector.head.x - vector.tail.x,
     yComponent: vector.head.y - vector.tail.y
   }))
-}, { immediate: true, deep: true })
+)
+
+const roundToTwoDecimals = (value) => {
+  return Number(value).toFixed(2);
+}
 
 const addNewVector = () => {
   emit('addVector', {
@@ -189,6 +203,10 @@ const updateAngle = (vector, event) => {
   emit('updateVector', vector);
 }
 
+const openSettingsModal = () => {
+  settingsModalOpen.value = true
+}
+
 // Update vectors when objectExperiencingForce changes
 watch(() => props.objectExperiencingForce, (newValue) => {
   if (newValue) {
@@ -199,5 +217,52 @@ watch(() => props.objectExperiencingForce, (newValue) => {
     })
   }
 })
+
+const netForceX = computed(() => {
+  return roundToTwoDecimals(localForceVectors.value.reduce((sum, vector) => sum + vector.xComponent, 0))
+})
+
+const netForceY = computed(() => {
+  return roundToTwoDecimals(localForceVectors.value.reduce((sum, vector) => sum + vector.yComponent, 0))
+})
+
+const netForceMagnitude = computed(() => {
+  return roundToTwoDecimals(
+    Math.sqrt(netForceX.value ** 2 + netForceY.value ** 2)
+  )
+})
+
+const netForceAngle = computed(() => {
+  let angle = Math.atan2(netForceY.value, netForceX.value) * (180 / Math.PI)
+  if (angle < 0) angle += 360
+  return roundToTwoDecimals(angle)
+})
 </script>
 
+<style scoped>
+.force-table-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.controls-container {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.net-force-separator td {
+  padding: 0;
+}
+
+.net-force-separator hr {
+  margin: 0;
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.net-force-row {
+  font-weight: bold;
+}
+</style>
