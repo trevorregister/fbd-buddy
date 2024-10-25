@@ -3,78 +3,57 @@
     <v-table>
       <thead>
         <tr>
-          <th>Type</th>
+          <th>Force Name</th>
           <th>Object Exerting Force</th>
-          <th>Object Experiencing Force</th>
-          <th v-if="isPolar">Magnitude</th>
-          <th v-if="isPolar">Angle (degrees)</th>
-          <th v-if="!isPolar">X-Component</th>
-          <th v-if="!isPolar">Y-Component</th>
+          <th>{{ isPolar ? 'Magnitude' : 'X Component' }}</th>
+          <th>{{ isPolar ? 'Angle' : 'Y Component' }}</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr 
-          v-for="vector in localForceVectors" 
-          :key="vector.id"
-          @mouseenter="highlightVector(vector.id)"
-          @mouseleave="unhighlightVector"
-        >
-          <td>
-            <v-select
-              v-model="vector.type"
-              :items="forceTypes"
-              @update:modelValue="updateVector(vector)"
-            ></v-select>
+        <tr v-for="vector in forceVectors" :key="vector.id">
+          <td class="align-center">
+            <v-text-field
+              v-model="vector.name"
+              placeholder="Enter force name"
+              dense
+              hide-details
+            ></v-text-field>
           </td>
-          <td>
+          <td class="align-center">
             <v-text-field
               v-model="vector.objectExerting"
-              @update:modelValue="updateVector(vector)"
+              placeholder="Enter object exerting force"
+              dense
+              hide-details
             ></v-text-field>
           </td>
-          <td>
+          <td class="align-center">
             <v-text-field
-              v-model="vector.objectExperiencing"
-              @update:modelValue="updateVector(vector)"
-            ></v-text-field>
-          </td>
-          <td v-if="isPolar">
-            <v-text-field
-              v-model.number="vector.magnitude"
+              :value="roundToTwoDecimals(isPolar ? vector.magnitude : vector.xComponent)"
+              @input="isPolar ? updateMagnitude(vector, $event) : updateXComponent(vector, $event)"
               type="number"
-              @update:modelValue="updateMagnitude(vector)"
+              dense
+              hide-details
             ></v-text-field>
           </td>
-          <td v-if="isPolar">
+          <td class="align-center">
             <v-text-field
-              v-model.number="vector.angle"
+              :value="roundToTwoDecimals(isPolar ? vector.angle : vector.yComponent)"
+              @input="isPolar ? updateAngle(vector, $event) : updateYComponent(vector, $event)"
               type="number"
-              @update:modelValue="updateAngle(vector)"
+              dense
+              hide-details
             ></v-text-field>
           </td>
-          <td v-if="!isPolar">
-            <v-text-field
-              v-model.number="vector.xComponent"
-              type="number"
-              @update:modelValue="updateXComponent(vector)"
-            ></v-text-field>
-          </td>
-          <td v-if="!isPolar">
-            <v-text-field
-              v-model.number="vector.yComponent"
-              type="number"
-              @update:modelValue="updateYComponent(vector)"
-            ></v-text-field>
-          </td>
-          <td>
+          <td class="align-center">
             <v-btn @click="deleteVector(vector.id)" size="small">Delete</v-btn>
           </td>
         </tr>
       </tbody>
       <tfoot>
         <tr>
-          <td colspan="6">
+          <td colspan="5">
             <v-btn @click="addNewVector">Add New Vector</v-btn>
           </td>
         </tr>
@@ -91,10 +70,8 @@
 import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
-  forceVectors: {
-    type: Array,
-    required: true
-  }
+  forceVectors: Array,
+  objectExperiencingForce: String,
 })
 
 const emit = defineEmits(['addVector', 'deleteVector', 'updateVector', 'highlightVector', 'unhighlightVector'])
@@ -110,6 +87,10 @@ const forceTypes = [
 const isPolar = ref(false)
 
 const localForceVectors = ref([])
+
+const roundToTwoDecimals = (value) => {
+  return Number(value).toFixed(2);
+}
 
 watch(() => props.forceVectors, (newVectors) => {
   localForceVectors.value = newVectors.map(vector => ({
@@ -152,6 +133,10 @@ const unhighlightVector = () => {
   emit('unhighlightVector')
 }
 
+const clearVectors = () => {
+  emit('clearVectors')
+}
+
 function calculateMagnitude(vector) {
   const dx = vector.head.x - vector.tail.x
   const dy = vector.head.y - vector.tail.y
@@ -168,35 +153,51 @@ function calculateAngle(vector) {
   return angle
 }
 
-const updateXComponent = (vector) => {
-  vector.head.x = vector.tail.x + Number(vector.xComponent)
-  vector.magnitude = calculateMagnitude(vector)
-  vector.angle = calculateAngle(vector)
-  emit('updateVector', vector)
+const updateXComponent = (vector, event) => {
+  vector.xComponent = Number(event.target.value);
+  vector.head.x = vector.tail.x + vector.xComponent;
+  vector.magnitude = roundToTwoDecimals(calculateMagnitude(vector));
+  vector.angle = roundToTwoDecimals(calculateAngle(vector));
+  emit('updateVector', vector);
 }
 
-const updateYComponent = (vector) => {
-  vector.head.y = vector.tail.y + Number(vector.yComponent)
-  vector.magnitude = calculateMagnitude(vector)
-  vector.angle = calculateAngle(vector)
-  emit('updateVector', vector)
+const updateYComponent = (vector, event) => {
+  vector.yComponent = Number(event.target.value);
+  vector.head.y = vector.tail.y + vector.yComponent;
+  vector.magnitude = roundToTwoDecimals(calculateMagnitude(vector));
+  vector.angle = roundToTwoDecimals(calculateAngle(vector));
+  emit('updateVector', vector);
 }
 
-const updateMagnitude = (vector) => {
-  const angle = vector.angle * (Math.PI / 180)
-  vector.head.x = vector.tail.x + Number(vector.magnitude) * Math.cos(angle)
-  vector.head.y = vector.tail.y + Number(vector.magnitude) * Math.sin(angle)
-  vector.xComponent = vector.head.x - vector.tail.x
-  vector.yComponent = vector.head.y - vector.tail.y
-  emit('updateVector', vector)
+const updateMagnitude = (vector, event) => {
+  vector.magnitude = Number(event.target.value);
+  const angle = vector.angle * (Math.PI / 180);
+  vector.head.x = vector.tail.x + vector.magnitude * Math.cos(angle);
+  vector.head.y = vector.tail.y + vector.magnitude * Math.sin(angle);
+  vector.xComponent = roundToTwoDecimals(vector.head.x - vector.tail.x);
+  vector.yComponent = roundToTwoDecimals(vector.head.y - vector.tail.y);
+  emit('updateVector', vector);
 }
 
-const updateAngle = (vector) => {
-  const angle = Number(vector.angle) * (Math.PI / 180)
-  vector.head.x = vector.tail.x + vector.magnitude * Math.cos(angle)
-  vector.head.y = vector.tail.y + vector.magnitude * Math.sin(angle)
-  vector.xComponent = vector.head.x - vector.tail.x
-  vector.yComponent = vector.head.y - vector.tail.y
-  emit('updateVector', vector)
+const updateAngle = (vector, event) => {
+  vector.angle = Number(event.target.value);
+  const angle = vector.angle * (Math.PI / 180);
+  vector.head.x = vector.tail.x + vector.magnitude * Math.cos(angle);
+  vector.head.y = vector.tail.y + vector.magnitude * Math.sin(angle);
+  vector.xComponent = roundToTwoDecimals(vector.head.x - vector.tail.x);
+  vector.yComponent = roundToTwoDecimals(vector.head.y - vector.tail.y);
+  emit('updateVector', vector);
 }
+
+// Update vectors when objectExperiencingForce changes
+watch(() => props.objectExperiencingForce, (newValue) => {
+  if (newValue) {
+    props.forceVectors.forEach(vector => {
+      if (!vector.objectExperiencingForce) {
+        vector.objectExperiencingForce = newValue
+      }
+    })
+  }
+})
 </script>
+

@@ -15,5 +15,8 @@ export default defineConfig({
         alias: {
             'jquery-ui': 'jquery-ui-dist/jquery-ui.js',
         }
+    },
+    ssr: {
+        noExternal: ['draw2d', 'jquery', 'jquery-ui-dist']
     }
 })
