@@ -24,8 +24,8 @@
               </div>
             </div>
             <ClientOnly>
-              <v-stage :config="configStage" class="grid-stage">
-                <v-layer>
+              <v-stage ref="stage" :config="configStage" class="grid-stage">
+                <v-layer ref="layer">
                   <v-image :config="backgroundConfig" />
                   <Point 
                     :x="0"
@@ -40,12 +40,16 @@
                     :head="vector.head" 
                     :showComponents="showComponents"
                     :id="vector.id"
-                    :canDrag="true"
+                    :canDrag="!isAnimating"
                     :isHighlighted="vector.id === highlightedVectorId"
+                    @update:head="(newHead) => updateVectorHead(vector.id, newHead)"
                   />  
                 </v-layer>
               </v-stage>
             </ClientOnly>
+            <v-btn @click="animateVectors" :disabled="isAnimating">
+              {{ isAnimating ? 'Animating...' : 'Animate Vectors' }}
+            </v-btn>
           </v-col>
           <v-col cols="6" class="grid-column">
             <div class="grid-header">
@@ -112,6 +116,8 @@ import ForceTable from '~/components/ForceTable.vue'
 import { provideCanvasDimensions } from '~/composables/useCanvasDimensions'
 import SettingsModal from '~/components/SettingsModal.vue'
 import InteractionDiagram from '~/components/InteractionDiagram.vue'
+import { useAnimate } from '@vueuse/core'
+import Konva from 'konva'
 
 const showComponents = ref(false) 
 const hideGrid = ref(false)
@@ -125,6 +131,8 @@ const forceVectors = ref([])
 
 const addForceVector = (newVector) => {
   forceVectors.value.push(newVector)
+  console.log('Added new vector:', newVector)
+  console.log('Current forceVectors:', forceVectors.value)
 }
 
 const deleteForceVector = (id) => {
@@ -194,11 +202,100 @@ const unhighlightVector = () => {
 
 const objectExperiencingForce = ref('')
 
+const isAnimating = ref(false)
+const animatingVectorIndex = ref(-1)
+const animationProgress = ref(0)
+
+const { animate } = useAnimate(animationProgress, {
+  duration: 1000,
+  easing: 'easeInOutCubic',
+})
+
+const stage = ref(null)
+const layer = ref(null)
+
+const animateVectors = async () => {
+  if (isAnimating.value) return
+
+  isAnimating.value = true
+  const stageInstance = stage.value.getNode()
+  const layerInstance = layer.value.getNode()
+
+  console.log('Stage instance:', stageInstance)
+  console.log('Layer instance:', layerInstance)
+
+  for (let i = 0; i < forceVectors.value.length; i++) {
+    const vector = forceVectors.value[i]
+    console.log('Animating vector:', vector)
+
+    const vectorNode = layerInstance.findOne(`#${vector.id}`)
+    console.log('Vector node:', vectorNode)
+    
+    if (vectorNode) {
+      const originalX = vectorNode.x()
+      await new Promise(resolve => {
+        const anim = new Konva.Animation(frame => {
+          const progress = Math.min(frame.time / 1000, 1) // 1 second duration
+          const newX = originalX + (200 * progress)
+          vectorNode.x(newX)
+          
+          console.log(`Animating vector ${vector.id}: progress=${progress}, newX=${newX}`)
+          
+          if (progress >= 1) {
+            anim.stop()
+            resolve()
+          }
+        }, layerInstance)
+
+        anim.start()
+      })
+
+      // Reset the vector position after animation
+      vectorNode.x(originalX)
+
+      // Pause between vector animations
+      await new Promise(resolve => setTimeout(resolve, 200))
+    } else {
+      console.error(`Vector node not found for id: ${vector.id}`)
+    }
+  }
+
+  isAnimating.value = false
+  console.log('Animation complete')
+}
+
 onMounted(() => {
   nextTick(() => {
-    // Removed updateTabPlaceholder function and related watch
+    console.log('Stage ref:', stage.value)
+    console.log('Layer ref:', layer.value)
+    if (stage.value && layer.value) {
+      console.log('Stage node:', stage.value.getNode())
+      console.log('Layer node:', layer.value.getNode())
+    }
   })
 })
+
+watch(forceVectors, (newVectors) => {
+  console.log('forceVectors updated:', newVectors)
+}, { deep: true })
+
+watch([stage, layer], ([newStage, newLayer]) => {
+  if (newStage && newLayer) {
+    console.log('Stage and Layer are ready')
+    console.log('Stage children:', newStage.getNode().children)
+    console.log('Layer children:', newLayer.getNode().children)
+  }
+})
+
+const updateVectorHead = (id, newHead) => {
+  const index = forceVectors.value.findIndex(v => v.id === id)
+  if (index !== -1) {
+    forceVectors.value[index] = {
+      ...forceVectors.value[index],
+      head: newHead
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -253,3 +350,4 @@ body{
   align-items: center;
 }
 </style>
+
