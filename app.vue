@@ -98,6 +98,7 @@
             v-if="isAnimating"
             ref="animationOverlay"
             :configStage="configStage"
+            :forceVectors="forceVectors"
           />
         </Teleport>
         
@@ -236,9 +237,8 @@ const animateVectors = async () => {
       return
     }
 
-    // Pass grid position to overlay
     animationOverlay.value.setPosition(gridPos)
-    await animationOverlay.value.animateDot()
+    await animationOverlay.value.animateVectors()
   } catch (error) {
     console.error('Animation error:', error)
   } finally {
