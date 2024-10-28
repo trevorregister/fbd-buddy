@@ -10,18 +10,18 @@
           :x="0"
           :y="0"
           :radius="8"
-          :fill="black"
+          :fill="'black'"
         />
         <ForceVector v-for="vector in cumulativeVectors" 
           :key="vector.id"
           :tail="vector.tail" 
           :head="vector.head" 
-          :id="vector.id"
           :showComponents="showComponents"
+          :id="vector.id"
           :canDrag="false"
         />  
         <!-- Net Force Vector -->
-        <v-arrow
+        <v-arrow v-if="showNetForce"
           :config="{
             points: [netForceStart.x, netForceStart.y, netForceEnd.x, netForceEnd.y],
             pointerLength: 10,
@@ -38,7 +38,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import Grid from '~/components/Grid.vue'
 import ForceVector from '~/components/ForceVector.vue'
 import { gridToCanvasCoordinates } from '~/utils/coordinates'
@@ -61,6 +61,8 @@ const props = defineProps({
     required: true
   }
 })
+
+const showNetForce = ref(true)
 
 const cumulativeVectors = computed(() => {
   let cumulative = { x: 0, y: 0 }
@@ -98,6 +100,10 @@ const netForceEnd = computed(() => {
     firstVector.tail.y + sumY
   )
 })
+
+watch(() => props.forceVectors, (newVectors) => {
+  console.log('ForceAdditionDiagram received new vectors:', newVectors)
+}, { deep: true })
 </script>
 
 <style scoped>

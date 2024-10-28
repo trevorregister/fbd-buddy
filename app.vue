@@ -6,7 +6,7 @@
         <v-row>
           <SettingsModal @save-settings="handleSaveSettings"/>
         </v-row>
-        <v-row class="grid-row">
+        <div class="grid-row" style="position: relative;">
           <v-col cols="6" class="grid-column">
             <div class="grid-header">
               <div class="free-body-diagram-label">
@@ -24,7 +24,7 @@
               </div>
             </div>
             <ClientOnly>
-              <v-stage ref="stage" :config="configStage" class="grid-stage">
+              <v-stage ref="leftGrid" :config="configStage" class="grid-stage">
                 <v-layer ref="layer">
                   <v-image :config="backgroundConfig" />
                   <Point 
@@ -49,6 +49,9 @@
             </ClientOnly>
             <v-btn @click="animateVectors" :disabled="isAnimating">
               {{ isAnimating ? 'Animating...' : 'Animate Vectors' }}
+            </v-btn>
+            <v-btn @click="debugOverlay">
+              Debug Overlay
             </v-btn>
           </v-col>
           <v-col cols="6" class="grid-column">
@@ -87,7 +90,17 @@
               </v-window-item>
             </v-window>
           </v-col>
-        </v-row>
+        </div>
+        
+        <!-- Animation overlay -->
+        <Teleport to="body">
+          <AnimationOverlay
+            v-if="isAnimating"
+            ref="animationOverlay"
+            :configStage="configStage"
+          />
+        </Teleport>
+        
         <v-row>
           <v-btn @click="triggerImageUpload">
             Upload Background Image
@@ -118,6 +131,7 @@ import SettingsModal from '~/components/SettingsModal.vue'
 import InteractionDiagram from '~/components/InteractionDiagram.vue'
 import { useAnimate } from '@vueuse/core'
 import Konva from 'konva'
+import AnimationOverlay from '~/components/AnimationOverlay.vue'
 
 const showComponents = ref(false) 
 const hideGrid = ref(false)
@@ -203,65 +217,64 @@ const unhighlightVector = () => {
 const objectExperiencingForce = ref('')
 
 const isAnimating = ref(false)
-const animatingVectorIndex = ref(-1)
-const animationProgress = ref(0)
+const animationOverlay = ref(null)
 
-const { animate } = useAnimate(animationProgress, {
-  duration: 1000,
-  easing: 'easeInOutCubic',
-})
+const animateVectors = async () => {
+  if (isAnimating.value) return
+  console.log('Starting animation sequence')
+  isAnimating.value = true
+
+  // Get grid position
+  const gridPos = getGridPosition()
+  console.log('Grid position:', gridPos)
+
+  await nextTick()
+
+  try {
+    if (!animationOverlay.value) {
+      console.error('Animation overlay not found')
+      return
+    }
+
+    // Pass grid position to overlay
+    animationOverlay.value.setPosition(gridPos)
+    await animationOverlay.value.animateDot()
+  } catch (error) {
+    console.error('Animation error:', error)
+  } finally {
+    isAnimating.value = false
+    console.log('Animation sequence complete')
+  }
+}
 
 const stage = ref(null)
 const layer = ref(null)
 
-const animateVectors = async () => {
-  if (isAnimating.value) return
+const leftGrid = ref(null)
 
-  isAnimating.value = true
-  const stageInstance = stage.value.getNode()
-  const layerInstance = layer.value.getNode()
-
-  console.log('Stage instance:', stageInstance)
-  console.log('Layer instance:', layerInstance)
-
-  for (let i = 0; i < forceVectors.value.length; i++) {
-    const vector = forceVectors.value[i]
-    console.log('Animating vector:', vector)
-
-    const vectorNode = layerInstance.findOne(`#${vector.id}`)
-    console.log('Vector node:', vectorNode)
+const getGridPosition = () => {
+  if (leftGrid.value) {
+    const leftContainer = leftGrid.value.$el
+    const leftRect = leftContainer.getBoundingClientRect()
     
-    if (vectorNode) {
-      const originalX = vectorNode.x()
-      await new Promise(resolve => {
-        const anim = new Konva.Animation(frame => {
-          const progress = Math.min(frame.time / 1000, 1) // 1 second duration
-          const newX = originalX + (200 * progress)
-          vectorNode.x(newX)
-          
-          console.log(`Animating vector ${vector.id}: progress=${progress}, newX=${newX}`)
-          
-          if (progress >= 1) {
-            anim.stop()
-            resolve()
-          }
-        }, layerInstance)
-
-        anim.start()
-      })
-
-      // Reset the vector position after animation
-      vectorNode.x(originalX)
-
-      // Pause between vector animations
-      await new Promise(resolve => setTimeout(resolve, 200))
-    } else {
-      console.error(`Vector node not found for id: ${vector.id}`)
+    // Get the right grid element
+    const rightGrid = document.querySelector('.v-window-item--active .grid-stage')
+    const rightRect = rightGrid?.getBoundingClientRect()
+    
+    console.log('Left grid rect:', leftRect)
+    console.log('Right grid rect:', rightRect)
+    
+    // Calculate total width including the gap
+    const totalWidth = rightRect ? (rightRect.right - leftRect.left) : leftRect.width * 2
+    console.log('Total width:', totalWidth)
+    
+    return {
+      left: leftRect.left,
+      top: leftRect.top,
+      totalWidth: totalWidth
     }
   }
-
-  isAnimating.value = false
-  console.log('Animation complete')
+  return { left: 0, top: 0, totalWidth: 1020 }
 }
 
 onMounted(() => {
@@ -273,18 +286,14 @@ onMounted(() => {
       console.log('Layer node:', layer.value.getNode())
     }
   })
-})
 
-watch(forceVectors, (newVectors) => {
-  console.log('forceVectors updated:', newVectors)
-}, { deep: true })
-
-watch([stage, layer], ([newStage, newLayer]) => {
-  if (newStage && newLayer) {
-    console.log('Stage and Layer are ready')
-    console.log('Stage children:', newStage.getNode().children)
-    console.log('Layer children:', newLayer.getNode().children)
-  }
+  watch([stage, layer], ([newStage, newLayer]) => {
+    if (newStage && newLayer) {
+      console.log('Stage and Layer are ready')
+      console.log('Stage children:', newStage.getNode().children)
+      console.log('Layer children:', newLayer.getNode().children)
+    }
+  })
 })
 
 const updateVectorHead = (id, newHead) => {
@@ -296,6 +305,16 @@ const updateVectorHead = (id, newHead) => {
     }
   }
 }
+
+const debugOverlay = () => {
+  console.log('Animation overlay ref:', animationOverlay.value)
+  if (animationOverlay.value) {
+    console.log('Animation overlay layer:', animationOverlay.value.layer)
+    console.log('Animation overlay mounted:', animationOverlay.value.isMounted)
+  } else {
+    console.log('Animation overlay not yet initialized')
+  }
+}
 </script>
 
 <style scoped>
@@ -303,8 +322,10 @@ body{
   max-width: clamp(320px, 90%, 1000px);
 }
 .grid-row {
+  position: relative;
   display: flex;
   align-items: stretch;
+  min-height: 500px; /* Match your grid height */
 }
 
 .grid-column {
@@ -350,4 +371,3 @@ body{
   align-items: center;
 }
 </style>
-
