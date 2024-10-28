@@ -60,6 +60,9 @@ const setPosition = (pos) => {
   position.value = pos
 }
 
+const ARROW_HEAD_LENGTH = 120 // Match the value from ForceAdditionDiagram
+const GRID_SCALE = 15 // Match the value from ForceAdditionDiagram
+
 const animateVectors = async () => {
   console.log('Starting vector animation with vectors:', props.forceVectors)
   
@@ -78,20 +81,22 @@ const animateVectors = async () => {
   animatingVectors.value = []
 
   // Calculate the distance to move to the center of the right grid
-  const moveDistance = props.configStage.width + 82 // Width of one grid plus spacing plus padding
+  const moveDistance = props.configStage.width + 82
 
   // Keep track of cumulative position in the right grid
-  let cumulativePosition = { x: 0, y: 0 }
+  let cumulative = { x: 0, y: 0 }
 
   // Animate each vector one by one
   for (let i = 0; i < props.forceVectors.length; i++) {
     const vector = props.forceVectors[i]
-    console.log('Starting animation for vector:', vector, 'Current cumulative position:', cumulativePosition)
+    console.log('Starting animation for vector:', vector)
     
     // Calculate vector displacement
     const dx = vector.head.x - vector.tail.x
     const dy = vector.head.y - vector.tail.y
-    console.log('Vector displacement:', { dx, dy })
+    
+    // Calculate vector angle for arrowhead offset
+    const angle = Math.atan2(dy, dx)
     
     // Calculate start and end positions
     const startVector = {
@@ -102,25 +107,12 @@ const animateVectors = async () => {
     // Calculate end position (tail at cumulative position)
     const endVector = {
       ...vector,
-      tail: { ...cumulativePosition },
+      tail: { ...cumulative },
       head: {
-        x: cumulativePosition.x + dx,
-        y: cumulativePosition.y + dy
+        x: cumulative.x + dx,
+        y: cumulative.y + dy
       }
     }
-
-    console.log('Animation details:', {
-      startVector: {
-        tail: startVector.tail,
-        head: startVector.head
-      },
-      endVector: {
-        tail: endVector.tail,
-        head: endVector.head
-      },
-      cumulativePosition,
-      moveDistance
-    })
 
     // Add vector to animation
     animatingVectors.value = [...animatingVectors.value, startVector]
@@ -128,7 +120,7 @@ const animateVectors = async () => {
     // Animate the vector
     await new Promise(resolve => {
       let startTime = Date.now()
-      const duration = 1000 // 1 second
+      const duration = 1000
 
       const anim = new Konva.Animation(frame => {
         const elapsed = Date.now() - startTime
@@ -146,14 +138,6 @@ const animateVectors = async () => {
             y: startVector.head.y + (endVector.head.y - startVector.head.y) * progress
           }
         }
-
-        console.log('Animation frame:', {
-          progress,
-          currentPosition: {
-            tail: currentVector.tail,
-            head: currentVector.head
-          }
-        })
         
         // Update the animating vectors
         animatingVectors.value = animatingVectors.value.map(v => 
@@ -171,12 +155,11 @@ const animateVectors = async () => {
       anim.start()
     })
 
-    // Update cumulative position to be at the head of this vector
-    cumulativePosition = {
-      x: cumulativePosition.x + dx,
-      y: cumulativePosition.y + dy
+    // Update cumulative position to be at the tip of the arrowhead
+    cumulative = {
+      x: endVector.head.x + (ARROW_HEAD_LENGTH * Math.cos(angle) / GRID_SCALE),
+      y: endVector.head.y + (ARROW_HEAD_LENGTH * Math.sin(angle) / GRID_SCALE)
     }
-    console.log('Updated cumulative position:', cumulativePosition)
 
     // Pause between vectors
     await new Promise(resolve => setTimeout(resolve, 200))
