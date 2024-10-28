@@ -6,7 +6,7 @@
         <v-row>
           <SettingsModal @save-settings="handleSaveSettings"/>
         </v-row>
-        <v-row class="grid-row">
+        <div class="grid-row" style="position: relative;">
           <v-col cols="6" class="grid-column">
             <div class="grid-header">
               <div class="free-body-diagram-label">
@@ -24,8 +24,8 @@
               </div>
             </div>
             <ClientOnly>
-              <v-stage :config="configStage" class="grid-stage">
-                <v-layer>
+              <v-stage ref="leftGrid" :config="configStage" class="grid-stage">
+                <v-layer ref="layer">
                   <v-image :config="backgroundConfig" />
                   <Point 
                     :x="0"
@@ -40,8 +40,9 @@
                     :head="vector.head" 
                     :showComponents="showComponents"
                     :id="vector.id"
-                    :canDrag="true"
+                    :canDrag="!isAnimating"
                     :isHighlighted="vector.id === highlightedVectorId"
+                    @update:head="(newHead) => updateVectorHead(vector.id, newHead)"
                   />  
                 </v-layer>
               </v-stage>
@@ -62,6 +63,8 @@
                   :hideGrid="hideGrid"
                   :showComponents="showComponents"
                   :forceVectors="forceVectors"
+                  :isAnimating="isAnimating"
+                  @animate="animateVectors"
                 />
               </v-window-item>
               <v-window-item value="forces">
@@ -83,7 +86,18 @@
               </v-window-item>
             </v-window>
           </v-col>
-        </v-row>
+        </div>
+        
+        <!-- Animation overlay -->
+        <Teleport to="body">
+          <AnimationOverlay
+            v-if="isAnimating"
+            ref="animationOverlay"
+            :configStage="configStage"
+            :forceVectors="forceVectors"
+          />
+        </Teleport>
+        
         <v-row>
           <v-btn @click="triggerImageUpload">
             Upload Background Image
@@ -112,6 +126,9 @@ import ForceTable from '~/components/ForceTable.vue'
 import { provideCanvasDimensions } from '~/composables/useCanvasDimensions'
 import SettingsModal from '~/components/SettingsModal.vue'
 import InteractionDiagram from '~/components/InteractionDiagram.vue'
+import { useAnimate } from '@vueuse/core'
+import Konva from 'konva'
+import AnimationOverlay from '~/components/AnimationOverlay.vue'
 
 const showComponents = ref(false) 
 const hideGrid = ref(false)
@@ -125,6 +142,8 @@ const forceVectors = ref([])
 
 const addForceVector = (newVector) => {
   forceVectors.value.push(newVector)
+  console.log('Added new vector:', newVector)
+  console.log('Current forceVectors:', forceVectors.value)
 }
 
 const deleteForceVector = (id) => {
@@ -194,11 +213,94 @@ const unhighlightVector = () => {
 
 const objectExperiencingForce = ref('')
 
+const isAnimating = ref(false)
+const animationOverlay = ref(null)
+
+const animateVectors = async () => {
+  if (isAnimating.value) return
+  console.log('Starting animation sequence')
+  isAnimating.value = true
+
+  // Get grid position
+  const gridPos = getGridPosition()
+  console.log('Grid position:', gridPos)
+
+  await nextTick()
+
+  try {
+    if (!animationOverlay.value) {
+      console.error('Animation overlay not found')
+      return
+    }
+
+    animationOverlay.value.setPosition(gridPos)
+    await animationOverlay.value.animateVectors()
+  } catch (error) {
+    console.error('Animation error:', error)
+  } finally {
+    isAnimating.value = false
+    console.log('Animation sequence complete')
+  }
+}
+
+const stage = ref(null)
+const layer = ref(null)
+
+const leftGrid = ref(null)
+
+const getGridPosition = () => {
+  if (leftGrid.value) {
+    const leftContainer = leftGrid.value.$el
+    const leftRect = leftContainer.getBoundingClientRect()
+    
+    // Get the right grid element
+    const rightGrid = document.querySelector('.v-window-item--active .grid-stage')
+    const rightRect = rightGrid?.getBoundingClientRect()
+    
+    console.log('Left grid rect:', leftRect)
+    console.log('Right grid rect:', rightRect)
+    
+    // Calculate total width including the gap
+    const totalWidth = rightRect ? (rightRect.right - leftRect.left) : leftRect.width * 2
+    console.log('Total width:', totalWidth)
+    
+    return {
+      left: leftRect.left,
+      top: leftRect.top,
+      totalWidth: totalWidth
+    }
+  }
+  return { left: 0, top: 0, totalWidth: 1020 }
+}
+
 onMounted(() => {
   nextTick(() => {
-    // Removed updateTabPlaceholder function and related watch
+    console.log('Stage ref:', stage.value)
+    console.log('Layer ref:', layer.value)
+    if (stage.value && layer.value) {
+      console.log('Stage node:', stage.value.getNode())
+      console.log('Layer node:', layer.value.getNode())
+    }
+  })
+
+  watch([stage, layer], ([newStage, newLayer]) => {
+    if (newStage && newLayer) {
+      console.log('Stage and Layer are ready')
+      console.log('Stage children:', newStage.getNode().children)
+      console.log('Layer children:', newLayer.getNode().children)
+    }
   })
 })
+
+const updateVectorHead = (id, newHead) => {
+  const index = forceVectors.value.findIndex(v => v.id === id)
+  if (index !== -1) {
+    forceVectors.value[index] = {
+      ...forceVectors.value[index],
+      head: newHead
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -206,8 +308,10 @@ body{
   max-width: clamp(320px, 90%, 1000px);
 }
 .grid-row {
+  position: relative;
   display: flex;
   align-items: stretch;
+  min-height: 500px; /* Match your grid height */
 }
 
 .grid-column {

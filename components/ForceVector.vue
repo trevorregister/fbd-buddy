@@ -1,22 +1,19 @@
 <template>
-    <v-arrow :config="arrowConfig"/>
-    <v-circle 
-        :config="circleConfig"
-        @dragmove="dragCircle"
-        @dragend="dragEnd"
-        />
-    <div v-if="props.showComponents && hasNoZeroComponents">
-        <v-arrow :config="xComponentConfig"/>
-        <v-arrow :config="yComponentConfig"/>
-    </div>
+    <v-group :config="groupConfig">
+        <v-line :config="lineConfig" />
+        <v-regular-polygon :config="arrowHeadConfig" />
+        <v-circle :config="dragHandleConfig" @dragmove="handleArrowHeadDragMove" />
+        <v-text :config="labelConfig" />
+        <v-line v-if="showComponents" :config="xComponentConfig" />
+        <v-line v-if="showComponents" :config="yComponentConfig" />
+    </v-group>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { useCanvasDimensions } from '~/composables/useCanvasDimensions'
-import { gridToCanvasCoordinates, canvasToGridCoordinates } from '~/utils/coordinates';
+import { gridToCanvasCoordinates, canvasToGridCoordinates } from '~/utils/coordinates'
+import { useDebounceFn } from '@vueuse/core'
 
-const { width, height } = useCanvasDimensions()
 const props = defineProps({
     tail: {
         type: Object,
@@ -36,7 +33,7 @@ const props = defineProps({
     },
     canDrag: {
         type: Boolean,
-        required: true
+        default: true
     },
     isHighlighted: {
         type: Boolean,
@@ -44,158 +41,98 @@ const props = defineProps({
     }
 })
 
-const SNAP_TOLERANCE = 25
-const tail = ref(props.tail)
-const head = ref(props.head)
+const emit = defineEmits(['update:head'])
 
-// Watch for changes in props and update refs
-watch(() => props.tail, (newTail) => {
-    tail.value = newTail
+const vectorLength = ref(0)
+
+watch(() => [props.tail, props.head], ([newTail, newHead]) => {
+    const dx = newHead.x - newTail.x
+    const dy = newHead.y - newTail.y
+    vectorLength.value = Math.sqrt(dx * dx + dy * dy)
+}, { immediate: true })
+
+const groupConfig = computed(() => {
+    const { x, y } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    return { id: props.id, x, y }
 })
 
-watch(() => props.head, (newHead) => {
-    head.value = newHead
+const lineConfig = computed(() => {
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    return {
+        points: [0, 0, x2 - x1, y2 - y1],
+        stroke: props.isHighlighted ? 'red' : 'black',
+        strokeWidth: 2
+    }
 })
 
-const magnitude = computed(() => {
-    const dx = head.value.x - tail.value.x
-    const dy = head.value.y - tail.value.y
-    return Math.sqrt(dx * dx + dy * dy)
+const arrowHeadConfig = computed(() => {
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const dx = x2 - x1
+    const dy = y2 - y1
+    const angle = Math.atan2(dy, dx)
+    return {
+        x: dx,
+        y: dy,
+        sides: 3,
+        radius: 10,
+        fill: props.isHighlighted ? 'red' : 'black',
+        rotation: angle * 180 / Math.PI + 90
+    }
 })
 
+const dragHandleConfig = computed(() => {
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    return {
+        x: x2 - x1,
+        y: y2 - y1,
+        radius: 20,
+        fill: 'transparent',
+        draggable: props.canDrag
+    }
+})
 
-// Watch for changes in initialTail and initialHead
-watch(() => props.initialTail, (newTail) => {
-    tail.value = { ...newTail }
-}, { deep: true })
+const labelConfig = computed(() => {
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    return {
+    }
+})
 
-watch(() => props.initialHead, (newHead) => {
-    head.value = { ...newHead }
-}, { deep: true })
+const debouncedEmit = useDebounceFn((newHead) => {
+  emit('update:head', newHead)
+}, 16) // 60fps
 
-const dragCircle = (event) => {
-    if(props.canDrag === false){
-        return
+const handleArrowHeadDragMove = (e) => {
+    const dragHandle = e.target
+    const group = dragHandle.getParent()
+    const stage = group.getStage()
+    
+    const stagePos = stage.getPointerPosition()
+    const groupPos = group.absolutePosition()
+
+    // Get the cursor position relative to the stage
+    const cursorX = stagePos.x
+    const cursorY = stagePos.y
+
+    // Convert cursor position to grid coordinates
+    const gridPos = canvasToGridCoordinates(cursorX, cursorY)
+
+    // Calculate new head position directly from cursor position
+    const finalHead = {
+        x: gridPos.x,
+        y: gridPos.y
     }
 
-    const stage = event.target.getStage()
-    const pointerPosition = stage.getPointerPosition()
+    // Emit the new head position
+    emit('update:head', finalHead)
 
-    // Convert canvas coordinates to grid coordinates
-    let gridCoords = canvasToGridCoordinates(pointerPosition.x, pointerPosition.y)
-
-    // Snap to grid if within tolerance
-    const snappedX = Math.round(gridCoords.x / 50) * 50
-    const snappedY = Math.round(gridCoords.y / 50) * 50
-
-    if (Math.abs(gridCoords.x - snappedX) <= SNAP_TOLERANCE) {
-        gridCoords.x = snappedX
-    }
-    if (Math.abs(gridCoords.y - snappedY) <= SNAP_TOLERANCE) {
-        gridCoords.y = snappedY
-    }
-
-    // Update head position
-    head.value.x = gridCoords.x
-    head.value.y = gridCoords.y
-
-    // Update circle position
-    const canvasCoords = gridToCanvasCoordinates(gridCoords.x, gridCoords.y, )
-    event.target.position({
-        x: canvasCoords.x,
-        y: canvasCoords.y
+    // Update the drag handle to match cursor position
+    dragHandle.absolutePosition({
+        x: cursorX,
+        y: cursorY
     })
 }
-
-const arrowColor = computed(() => props.isHighlighted ? 'yellow' : 'black')
-
-const arrowConfig = computed(() => {
-    const tailCanvasPoint = gridToCanvasCoordinates(tail.value.x, tail.value.y)
-    const headCanvasPoint = gridToCanvasCoordinates(head.value.x, head.value.y)
-
-    return {
-        fill: arrowColor.value,
-        stroke: arrowColor.value,
-        strokeWidth: 2,
-        points: [
-            tailCanvasPoint.x,
-            tailCanvasPoint.y,
-            headCanvasPoint.x,
-            headCanvasPoint.y
-        ],
-    }
-})
-
-const xComponentConfig = computed(() => {
-    const tailCanvasPoint = gridToCanvasCoordinates(tail.value.x, tail.value.y)
-    const headCanvasPoint = gridToCanvasCoordinates(head.value.x, tail.value.y)
-    
-    return {
-        fill: arrowColor.value,
-        stroke: arrowColor.value,
-        strokeWidth: 1,
-        dash: [5, 5],
-        points: [
-            tailCanvasPoint.x,
-            tailCanvasPoint.y,
-            headCanvasPoint.x,
-            tailCanvasPoint.y
-        ],
-    }
-})
-
-const yComponentConfig = computed(() => {
-    const tailCanvasPoint = gridToCanvasCoordinates(head.value.x, tail.value.y)
-    const headCanvasPoint = gridToCanvasCoordinates(head.value.x, head.value.y)
-    
-    return {
-        fill: arrowColor.value,
-        stroke: arrowColor.value,
-        strokeWidth: 1,
-        dash: [5, 5],
-        points: [
-            tailCanvasPoint.x,
-            tailCanvasPoint.y,
-            headCanvasPoint.x,
-            headCanvasPoint.y
-        ],
-    }
-})
-
-const hasNoZeroComponents = computed(()=>{
-    const isXComponentZero = Math.abs(props.head.y - props.tail.y) > 0
-    const isYComponentZero = Math.abs(props.head.x - props.tail.x) > 0
-    return isXComponentZero && isYComponentZero
-})
-
-//necessary for ensuring the draggable circle snaps back to the vector head
-const dragEnd = (event) => {
-    const headCanvasPoint = gridToCanvasCoordinates(head.value.x, head.value.y)
-    
-    // Get the Konva.Circle instance
-    const circle = event.target
-
-    // Check if it's a Konva.Circle and has the x() and y() methods
-    if (circle && typeof circle.x === 'function' && typeof circle.y === 'function') {
-        circle.x(headCanvasPoint.x)
-        circle.y(headCanvasPoint.y)
-        
-        // If using Konva v8+, you might need to call this to update the position
-        circle.getLayer()?.batchDraw()
-    } else {
-        console.error('Invalid target for dragEnd event', circle)
-    }
-}
-
-const circleConfig = computed(() => {
-    const headCanvasPoint = gridToCanvasCoordinates(head.value.x, head.value.y)
-    return {
-        x: headCanvasPoint.x,
-        y: headCanvasPoint.y,
-        radius: 15,
-        opacity: 0,
-        fill: 'black',
-        draggable: true
-    }
-})
 </script>
