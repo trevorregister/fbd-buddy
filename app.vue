@@ -47,12 +47,6 @@
                 </v-layer>
               </v-stage>
             </ClientOnly>
-            <v-btn @click="animateVectors" :disabled="isAnimating">
-              {{ isAnimating ? 'Animating...' : 'Animate Vectors' }}
-            </v-btn>
-            <v-btn @click="debugOverlay">
-              Debug Overlay
-            </v-btn>
           </v-col>
           <v-col cols="6" class="grid-column">
             <div class="grid-header">
@@ -69,6 +63,8 @@
                   :hideGrid="hideGrid"
                   :showComponents="showComponents"
                   :forceVectors="forceVectors"
+                  :isAnimating="isAnimating"
+                  @animate="animateVectors"
                 />
               </v-window-item>
               <v-window-item value="forces">
@@ -303,16 +299,6 @@ const updateVectorHead = (id, newHead) => {
       ...forceVectors.value[index],
       head: newHead
     }
-  }
-}
-
-const debugOverlay = () => {
-  console.log('Animation overlay ref:', animationOverlay.value)
-  if (animationOverlay.value) {
-    console.log('Animation overlay layer:', animationOverlay.value.layer)
-    console.log('Animation overlay mounted:', animationOverlay.value.isMounted)
-  } else {
-    console.log('Animation overlay not yet initialized')
   }
 }
 </script>
