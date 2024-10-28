@@ -98,13 +98,6 @@ const labelConfig = computed(() => {
     const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
     const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
     return {
-        x: (x2 - x1) / 2,
-        y: (y2 - y1) / 2,
-        text: props.id,
-        fontSize: 12,
-        fill: 'black',
-        align: 'center',
-        verticalAlign: 'middle'
     }
 })
 
@@ -117,33 +110,29 @@ const handleArrowHeadDragMove = (e) => {
     const group = dragHandle.getParent()
     const stage = group.getStage()
     
-    const groupPos = group.position()
     const stagePos = stage.getPointerPosition()
+    const groupPos = group.absolutePosition()
 
-    // Calculate the new vector in canvas coordinates
-    const newVectorX = stagePos.x - groupPos.x
-    const newVectorY = groupPos.y - stagePos.y  // Invert the y-coordinate
+    // Get the cursor position relative to the stage
+    const cursorX = stagePos.x
+    const cursorY = stagePos.y
 
-    // Convert to grid coordinates
-    const gridScale = stage.width() / 10 // Assuming 10x10 grid
-    const newGridVectorX = newVectorX / gridScale
-    const newGridVectorY = newVectorY / gridScale
+    // Convert cursor position to grid coordinates
+    const gridPos = canvasToGridCoordinates(cursorX, cursorY)
 
-    // Calculate the new head position while maintaining the vector length
-    const currentLength = Math.sqrt(newGridVectorX ** 2 + newGridVectorY ** 2)
-    const scaleFactor = vectorLength.value / currentLength
-
+    // Calculate new head position directly from cursor position
     const finalHead = {
-        x: props.tail.x + newGridVectorX * scaleFactor,
-        y: props.tail.y + newGridVectorY * scaleFactor
+        x: gridPos.x,
+        y: gridPos.y
     }
 
-    debouncedEmit(finalHead)
+    // Emit the new head position
+    emit('update:head', finalHead)
 
-    // Update the drag handle position immediately for smooth dragging
-    dragHandle.position({
-        x: newVectorX * scaleFactor,
-        y: -newVectorY * scaleFactor  // Invert the y-coordinate for display
+    // Update the drag handle to match cursor position
+    dragHandle.absolutePosition({
+        x: cursorX,
+        y: cursorY
     })
 }
 </script>
