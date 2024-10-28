@@ -64,18 +64,36 @@ const props = defineProps({
 
 const showNetForce = ref(true)
 
+const ARROW_HEAD_LENGTH = 120
+ // Increased arrowhead length
+const GRID_SCALE = 15 // Adjusted scale factor
+
 const cumulativeVectors = computed(() => {
   let cumulative = { x: 0, y: 0 }
   return props.forceVectors.map(v => {
+    const dx = v.head.x - v.tail.x
+    const dy = v.head.y - v.tail.y
+    
+    // Calculate vector angle
+    const angle = Math.atan2(dy, dx)
+    
+    // Create new vector starting at previous vector's head
     const newVector = {
       id: `cumulative-${v.id}`,
-      tail: { x: cumulative.x, y: cumulative.y },
+      tail: { ...cumulative }, // Start at previous vector's head
       head: { 
-        x: cumulative.x + (v.head.x - v.tail.x),
-        y: cumulative.y + (v.head.y - v.tail.y)
+        x: cumulative.x + dx,
+        y: cumulative.y + dy
       }
     }
-    cumulative = newVector.head
+    
+    // Update cumulative to be at the tip of the arrowhead
+    // Add the full arrowhead length in the direction of the vector
+    cumulative = {
+      x: newVector.head.x + (ARROW_HEAD_LENGTH * Math.cos(angle) / GRID_SCALE),
+      y: newVector.head.y + (ARROW_HEAD_LENGTH * Math.sin(angle) / GRID_SCALE)
+    }
+    
     return newVector
   })
 })
