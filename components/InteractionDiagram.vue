@@ -13,7 +13,6 @@
         :key="object.id"
         :transform="'translate(' + object.x + ',' + object.y + ')'"
         @mousedown.stop.prevent="onObjectMouseDown($event, object)"
-        @dblclick.stop.prevent="editObjectLabel(object)"
       >
         <ellipse
           :rx="objectWidth / 2"
@@ -21,15 +20,26 @@
           :fill="object.selected ? 'lightblue' : 'white'"
           stroke="black"
         />
-        <text
-          x="0"
-          y="5"
-          text-anchor="middle"
-          font-size="14"
-          fill="black"
+        <foreignObject
+          :x="-objectWidth/2"
+          :y="-objectHeight/2"
+          :width="objectWidth"
+          :height="objectHeight"
+          @dblclick.stop="startEditing(object)"
         >
-          {{ object.label }}
-        </text>
+          <div xmlns="http://www.w3.org/1999/xhtml"
+               style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+            <input v-if="object.isEditing"
+                   v-model="object.label"
+                   @blur="stopEditing(object)"
+                   @keyup.enter="stopEditing(object)"
+                   style="width: 90%; text-align: center; border: none; background: transparent;"
+                   ref="editInput"
+                   type="text"
+            />
+            <span v-else>{{ object.label }}</span>
+          </div>
+        </foreignObject>
       </g>
 
       <!-- Draw interactions -->
@@ -118,8 +128,25 @@ export default {
         y: this.canvasSize / 2,
         label: "Object",
         selected: false,
+        isEditing: false,
       };
       this.objects.push(newObject);
+    },
+    startEditing(object) {
+      // First set all objects to not editing
+      this.objects.forEach(obj => obj.isEditing = false);
+      // Then set this object to editing
+      object.isEditing = true;
+      this.$nextTick(() => {
+        const input = this.$refs.editInput;
+        if (input && input.length > 0) {
+          input[0].focus();
+          input[0].select();
+        }
+      });
+    },
+    stopEditing(object) {
+      object.isEditing = false;
     },
     editObjectLabel(object) {
       const label = prompt("Enter object label:", object.label);
@@ -140,11 +167,12 @@ export default {
         }
       } else {
         // Start dragging
+        const rect = this.$refs.svgCanvas.getBoundingClientRect();
         this.dragData = {
           type: "object",
           object: object,
-          offsetX: event.offsetX - object.x,
-          offsetY: event.offsetY - object.y,
+          offsetX: event.clientX - rect.left - object.x,
+          offsetY: event.clientY - rect.top - object.y,
         };
       }
     },
@@ -226,12 +254,19 @@ export default {
     },
     onMouseMove(event) {
       if (!this.dragData) return;
+      
       if (this.dragData.type === "object") {
+        const rect = this.$refs.svgCanvas.getBoundingClientRect();
+        const newX = event.clientX - rect.left - this.dragData.offsetX;
+        const newY = event.clientY - rect.top - this.dragData.offsetY;
+        
+        // Constrain movement within canvas bounds
         const object = this.dragData.object;
-        object.x = event.offsetX - this.dragData.offsetX;
-        object.y = event.offsetY - this.dragData.offsetY;
-      } else if (this.dragData.type === "interaction") {
-        // Optional: Implement interaction dragging logic here
+        const halfWidth = this.objectWidth / 2;
+        const halfHeight = this.objectHeight / 2;
+        
+        object.x = Math.max(halfWidth, Math.min(this.canvasSize - halfWidth, newX));
+        object.y = Math.max(halfHeight, Math.min(this.canvasSize - 100 - halfHeight, newY));
       }
     },
     onMouseUp() {
@@ -243,12 +278,16 @@ export default {
     svgCanvas.addEventListener("mousemove", this.onMouseMove);
     svgCanvas.addEventListener("mouseup", this.onMouseUp);
     svgCanvas.addEventListener("mouseleave", this.onMouseUp);
+    window.addEventListener("mousemove", this.onMouseMove);
+    window.addEventListener("mouseup", this.onMouseUp);
   },
   beforeUnmount() {
     const svgCanvas = this.$refs.svgCanvas;
     svgCanvas.removeEventListener("mousemove", this.onMouseMove);
     svgCanvas.removeEventListener("mouseup", this.onMouseUp);
     svgCanvas.removeEventListener("mouseleave", this.onMouseUp);
+    window.removeEventListener("mousemove", this.onMouseMove);
+    window.removeEventListener("mouseup", this.onMouseUp);
   },
 };
 </script>
@@ -256,5 +295,9 @@ export default {
 <style scoped>
 svg {
   cursor: default;
+}
+
+input:focus {
+  outline: none;
 }
 </style> 
