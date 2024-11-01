@@ -59,10 +59,31 @@
     <!-- Buttons -->
     <div style="margin-top:10px;">
       <v-btn @click="addObject" class="mr-4">+ Object</v-btn>
-      <v-btn @click="addInteraction" :disabled="selectedObjects.length !== 2">
+      <v-btn @click="showInteractionDialog = true" :disabled="selectedObjects.length !== 2">
         + Interaction
       </v-btn>
     </div>
+
+    <!-- Interaction Dialog -->
+    <v-dialog v-model="showInteractionDialog" max-width="400px">
+      <v-card>
+        <v-card-title>Add Interaction</v-card-title>
+        <v-card-text>
+          <v-select
+            v-model="selectedInteractionType"
+            :items="interactionTypes"
+            item-title="text"
+            item-value="value"
+            label="Select Interaction Type"
+          ></v-select>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" text @click="showInteractionDialog = false">Cancel</v-btn>
+          <v-btn color="primary" text @click="createInteraction">Add</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -78,6 +99,15 @@ export default {
       interactions: [],
       selectedObjects: [],
       dragData: null,
+      showInteractionDialog: false,
+      selectedInteractionType: null,
+      interactionTypes: [
+        { text: 'Gravitational', value: 'Gravitational' },
+        { text: 'Electrostatic', value: 'Electrostatic' },
+        { text: 'Magnetic', value: 'Magnetic' },
+        { text: 'Normal', value: 'Normal' },
+        { text: 'Frictional', value: 'Frictional' }
+      ]
     };
   },
   methods: {
@@ -118,30 +148,21 @@ export default {
         };
       }
     },
-    addInteraction() {
+    createInteraction() {
       const [obj1, obj2] = this.selectedObjects;
-      const interactionType = prompt(
-        "Select interaction type:\n1. Gravitational\n2. Electrostatic\n3. Magnetic\n4. Normal\n5. Frictional",
-        "1"
-      );
-      const types = [
-        "Gravitational",
-        "Electrostatic",
-        "Magnetic",
-        "Normal",
-        "Frictional",
-      ];
-      const label = types[parseInt(interactionType) - 1] || "Interaction";
       const newInteraction = {
         id: Date.now(),
         fromObjectId: obj1.id,
         toObjectId: obj2.id,
-        label: label,
+        label: this.selectedInteractionType,
       };
       this.interactions.push(newInteraction);
       // Reset selection
       this.objects.forEach((obj) => (obj.selected = false));
       this.selectedObjects = [];
+      // Close dialog and reset selection
+      this.showInteractionDialog = false;
+      this.selectedInteractionType = null;
     },
     getInteractionPath(interaction) {
     const fromObject = this.objects.find(
