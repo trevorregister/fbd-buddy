@@ -101,6 +101,28 @@ const labelConfig = computed(() => {
     }
 })
 
+const xComponentConfig = computed(() => {
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    return {
+        points: [0, 0, x2 - x1, y1 - y1],
+        stroke: 'blue',
+        strokeWidth: 2,
+        dash: [5, 5]
+    }
+})
+
+const yComponentConfig = computed(() => {
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    return {
+        points: [x2 - x1, 0, x2 - x1, y2 - y1],
+        stroke: 'red',
+        strokeWidth: 2,
+        dash: [5, 5]
+    }
+})
+
 const debouncedEmit = useDebounceFn((newHead) => {
   emit('update:head', newHead)
 }, 16) // 60fps
