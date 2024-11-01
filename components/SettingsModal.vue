@@ -5,10 +5,12 @@
             <v-card-title>Settings</v-card-title>
             <v-card-text>
                 <v-checkbox
-                    v-model="showComponents"
+                    :model-value="showComponents" 
+                    @update:model-value="showComponents = $event"
                     label="Show Vector Components"/>
                 <v-checkbox
-                    v-model="hideGrid"
+                    :model-value="hideGrid"
+                    @update:model-value="hideGrid = $event" 
                     label="Hide Grid"/>
             </v-card-text>
             <v-card-actions>
