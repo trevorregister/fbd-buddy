@@ -54,15 +54,19 @@
           fill="none"
           stroke-width="2"
         />
-        <text
-          :x="getInteractionMidpoint(interaction).x"
-          :y="getInteractionMidpoint(interaction).y"
-          text-anchor="middle"
-          font-size="12"
-          fill="red"
+        <foreignObject
+          :x="getInteractionMidpoint(interaction).x - 50"
+          :y="getInteractionMidpoint(interaction).y - 15"
+          width="100"
+          height="30"
         >
-          {{ interaction.label }}
-        </text>
+          <div 
+            xmlns="http://www.w3.org/1999/xhtml" 
+            class="math-container"
+            v-html="renderKatex(interaction.label)"
+          >
+          </div>
+        </foreignObject>
       </g>
     </svg>
 
@@ -98,6 +102,9 @@
 </template>
 
 <script>
+import katex from 'katex'
+import 'katex/dist/katex.min.css'
+
 export default {
   name: "InteractionDiagram",
   data() {
@@ -112,11 +119,11 @@ export default {
       showInteractionDialog: false,
       selectedInteractionType: null,
       interactionTypes: [
-        { text: 'Gravitational', value: 'Gravitational' },
-        { text: 'Electrostatic', value: 'Electrostatic' },
-        { text: 'Magnetic', value: 'Magnetic' },
-        { text: 'Normal', value: 'Normal' },
-        { text: 'Frictional', value: 'Frictional' }
+        { text: 'Gravitational', value: '\\vec{F}_g' },
+        { text: 'Electrostatic', value: '\\vec{F}_e' },
+        { text: 'Magnetic', value: '\\vec{F}_m' },
+        { text: 'Normal', value: '\\vec{N}' },
+        { text: 'Frictional', value: '\\vec{f}' }
       ]
     };
   },
@@ -185,6 +192,7 @@ export default {
         label: this.selectedInteractionType,
       };
       this.interactions.push(newInteraction);
+      
       // Reset selection
       this.objects.forEach((obj) => (obj.selected = false));
       this.selectedObjects = [];
@@ -272,6 +280,17 @@ export default {
     onMouseUp() {
       this.dragData = null;
     },
+    renderKatex(text) {
+      try {
+        return katex.renderToString(text, {
+          throwOnError: false,
+          displayMode: true
+        });
+      } catch (e) {
+        console.error('KaTeX error:', e);
+        return text;
+      }
+    },
   },
   mounted() {
     const svgCanvas = this.$refs.svgCanvas;
@@ -299,5 +318,25 @@ svg {
 
 input:focus {
   outline: none;
+}
+
+.math-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: red;
+  font-size: 14px;
+}
+
+/* Add KaTeX specific styles */
+.katex {
+  font-size: 1.1em !important;
+  color: red;
+}
+
+.katex-display {
+  margin: 0 !important;
 }
 </style> 
