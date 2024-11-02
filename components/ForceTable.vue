@@ -18,12 +18,22 @@
       <tbody>
         <tr v-for="vector in localForceVectors" :key="vector.id">
           <td class="align-center">
-            <v-text-field
-              v-model="vector.name"
-              placeholder="Enter force name"
-              dense
-              hide-details
-            ></v-text-field>
+            <div v-if="vector.isEditing">
+              <v-text-field
+                v-model="vector.name"
+                placeholder="Enter force name (LaTeX enabled)"
+                dense
+                hide-details
+                @blur="finishEditingName(vector)"
+                @keyup.enter="finishEditingName(vector)"
+              ></v-text-field>
+            </div>
+            <div 
+              v-else 
+              class="math-content" 
+              @click="startEditingName(vector)"
+              v-html="vector.renderedName"
+            ></div>
           </td>
           <td class="align-center">
             <v-text-field
@@ -89,7 +99,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
+import katex from 'katex'
+import 'katex/dist/katex.min.css'
 
 const props = defineProps({
   forceVectors: Array,
@@ -101,10 +113,15 @@ const emit = defineEmits(['addVector', 'deleteVector', 'updateVector', 'highligh
 const isPolar = ref(false)
 const settingsModalOpen = ref(false)
 
+// Add this after other ref declarations
+const editingStates = ref(new Map())
+
 // Create a reactive copy of forceVectors
 const localForceVectors = computed(() => 
   props.forceVectors.map(vector => ({
     ...vector,
+    isEditing: editingStates.value.has(vector.id),
+    renderedName: vector.renderedName || vector.name,
     magnitude: calculateMagnitude(vector),
     angle: calculateAngle(vector),
     xComponent: vector.head.x - vector.tail.x,
@@ -117,9 +134,13 @@ const roundToTwoDecimals = (value) => {
 }
 
 const addNewVector = () => {
+  const id = Date.now().toString()
+  editingStates.value.set(id, true)
   emit('addVector', {
-    id: Date.now().toString(),
+    id,
     type: 'Gravitational',
+    name: '',
+    renderedName: '',
     objectExerting: '',
     objectExperiencing: '',
     tail: { x: 0, y: 0 },
@@ -132,6 +153,7 @@ const addNewVector = () => {
 }
 
 const deleteVector = (id) => {
+  editingStates.value.delete(id)
   emit('deleteVector', id)
 }
 
@@ -237,6 +259,46 @@ const netForceAngle = computed(() => {
   if (angle < 0) angle += 360
   return roundToTwoDecimals(angle)
 })
+
+const renderKatex = (vector) => {
+  if (!vector.name) return '';
+  
+  try {
+    // Wrap the content in math mode if not already wrapped
+    let content = vector.name;
+    if (!content.includes('$')) {
+      content = content.trim();
+      content = `${content}`;
+    } else {
+      // Remove the dollar signs as katex doesn't need them
+      content = content.replace(/\$/g, '');
+    }
+    
+    return katex.renderToString(content, {
+      displayMode: false,
+      throwOnError: false,
+      output: 'html',
+      strict: false,
+      trust: true,
+      style: {
+        fontSize: '1em',
+      }
+    });
+  } catch (error) {
+    console.error('KaTeX rendering error:', error);
+    return vector.name; // Return plain text if rendering fails
+  }
+}
+
+const startEditingName = (vector) => {
+  editingStates.value.set(vector.id, true)
+}
+
+const finishEditingName = (vector) => {
+  editingStates.value.delete(vector.id)
+  vector.renderedName = renderKatex(vector)
+  emit('updateVector', vector)
+}
 </script>
 
 <style scoped>
@@ -264,5 +326,33 @@ const netForceAngle = computed(() => {
 
 .net-force-row {
   font-weight: bold;
+}
+
+.math-content {
+  min-height: 32px;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.math-content:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* KaTeX specific styles */
+:deep(.katex) {
+  font-size: 1em !important;
+  line-height: 1.2 !important;
+}
+
+:deep(.katex-html) {
+  white-space: normal !important;
+}
+
+td {
+  height: 48px !important;
+  padding: 0 8px !important;
+  vertical-align: middle !important;
 }
 </style>
