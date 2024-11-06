@@ -139,7 +139,7 @@ const addNewVector = () => {
   emit('addVector', {
     id,
     type: 'Gravitational',
-    name: '',
+    name: 'F_g',
     renderedName: '',
     objectExerting: '',
     objectExperiencing: '',
@@ -264,11 +264,19 @@ const renderKatex = (vector) => {
   if (!vector.name) return '';
   
   try {
-    // Wrap the content in math mode if not already wrapped
+    // Format the content with proper LaTeX notation
     let content = vector.name;
+    
+    // If it doesn't already have $ signs, add proper vector notation
     if (!content.includes('$')) {
       content = content.trim();
-      content = `${content}`;
+      // If it contains an underscore, it has a subscript
+      if (content.includes('_')) {
+        const [base, subscript] = content.split('_');
+        content = `\\vec{${base}}_{${subscript}}`; // Format as \vec{F}_N
+      } else {
+        content = `\\vec{${content}}`; // Just add vector notation
+      }
     } else {
       // Remove the dollar signs as katex doesn't need them
       content = content.replace(/\$/g, '');
@@ -294,11 +302,29 @@ const startEditingName = (vector) => {
   editingStates.value.set(vector.id, true)
 }
 
-const finishEditingName = (vector) => {
+const finishEditingName = async (vector) => {
   editingStates.value.delete(vector.id)
+  if (!vector.name) {
+    vector.name = 'F'
+  }
   vector.renderedName = renderKatex(vector)
-  emit('updateVector', vector)
+  emit('updateVector', {
+    ...vector,
+    renderedName: vector.renderedName
+  })
 }
+
+watch(() => localForceVectors.value.map(v => v.name), (newNames, oldNames) => {
+  localForceVectors.value.forEach((vector, index) => {
+    if (newNames[index] !== oldNames?.[index]) {
+      vector.renderedName = renderKatex(vector)
+      emit('updateVector', {
+        ...vector,
+        renderedName: vector.renderedName
+      })
+    }
+  })
+}, { deep: true })
 </script>
 
 <style scoped>
@@ -344,6 +370,7 @@ const finishEditingName = (vector) => {
 :deep(.katex) {
   font-size: 1em !important;
   line-height: 1.2 !important;
+  color: black !important;
 }
 
 :deep(.katex-html) {

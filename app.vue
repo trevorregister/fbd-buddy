@@ -42,6 +42,7 @@
                     :id="vector.id"
                     :canDrag="!isAnimating"
                     :isHighlighted="vector.id === highlightedVectorId"
+                    :label="vector.name"
                     @update:head="(newHead) => updateVectorHead(vector.id, newHead)"
                   />  
                 </v-layer>

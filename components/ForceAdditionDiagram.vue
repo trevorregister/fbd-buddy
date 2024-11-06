@@ -20,6 +20,10 @@
             :showComponents="showComponents"
             :id="vector.id"
             :canDrag="false"
+            :label="vector.name"
+            :highlighted="vector.id === highlightedVectorId"
+            @mouseenter="highlightVector(vector.id)"
+            @mouseleave="unhighlightVector"
           />  
           <!-- Net Force Vector -->
           <v-arrow v-if="showNetForce"
@@ -86,12 +90,15 @@ const cumulativeVectors = computed(() => {
     
     const newVector = {
       id: `cumulative-${v.id}`,
+      name: v.name,
       tail: { ...cumulative },
       head: { 
         x: cumulative.x + dx,
         y: cumulative.y + dy
       }
     }
+    
+    console.log('Vector label:', newVector.name)
     
     cumulative = {
       x: newVector.head.x + (ARROW_HEAD_LENGTH * Math.cos(angle) / GRID_SCALE),

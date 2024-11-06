@@ -3,7 +3,10 @@
         <v-line :config="lineConfig" />
         <v-regular-polygon :config="arrowHeadConfig" />
         <v-circle :config="dragHandleConfig" @dragmove="handleArrowHeadDragMove" />
-        <v-text :config="labelConfig" />
+        <v-label :config="labelGroupConfig">
+            <v-tag :config="labelTagConfig" />
+            <v-text :config="labelTextConfig" />
+        </v-label>
         <v-line v-if="showComponents" :config="xComponentConfig" />
         <v-line v-if="showComponents" :config="yComponentConfig" />
     </v-group>
@@ -38,18 +41,14 @@ const props = defineProps({
     isHighlighted: {
         type: Boolean,
         default: false
+    },
+    label: {
+        type: String,
+        default: 'No Label'
     }
 })
 
 const emit = defineEmits(['update:head'])
-
-const vectorLength = ref(0)
-
-watch(() => [props.tail, props.head], ([newTail, newHead]) => {
-    const dx = newHead.x - newTail.x
-    const dy = newHead.y - newTail.y
-    vectorLength.value = Math.sqrt(dx * dx + dy * dy)
-}, { immediate: true })
 
 const groupConfig = computed(() => {
     const { x, y } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
@@ -94,12 +93,37 @@ const dragHandleConfig = computed(() => {
     }
 })
 
-const labelConfig = computed(() => {
+const labelGroupConfig = computed(() => {
     const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
     const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const dx = x2 - x1
+    const dy = y2 - y1
+    
     return {
+        x: dx / 2,
+        y: dy / 2 - 30,
     }
 })
+
+const labelTagConfig = computed(() => ({
+    fill: 'white',
+    stroke: 'red',
+    strokeWidth: 2,
+    cornerRadius: 4,
+    pointerDirection: 'none',
+    pointerWidth: 0,
+    pointerHeight: 0,
+    lineJoin: 'round'
+}))
+
+const labelTextConfig = computed(() => ({
+    text: props.label || 'No Label',
+    fontSize: 14,
+    fontFamily: 'Arial',
+    fill: 'black',
+    padding: 5,
+    align: 'center'
+}))
 
 const xComponentConfig = computed(() => {
     const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
@@ -123,10 +147,6 @@ const yComponentConfig = computed(() => {
     }
 })
 
-const debouncedEmit = useDebounceFn((newHead) => {
-  emit('update:head', newHead)
-}, 16) // 60fps
-
 const handleArrowHeadDragMove = (e) => {
     const dragHandle = e.target
     const group = dragHandle.getParent()
@@ -135,26 +155,44 @@ const handleArrowHeadDragMove = (e) => {
     const stagePos = stage.getPointerPosition()
     const groupPos = group.absolutePosition()
 
-    // Get the cursor position relative to the stage
     const cursorX = stagePos.x
     const cursorY = stagePos.y
 
-    // Convert cursor position to grid coordinates
     const gridPos = canvasToGridCoordinates(cursorX, cursorY)
 
-    // Calculate new head position directly from cursor position
     const finalHead = {
         x: gridPos.x,
         y: gridPos.y
     }
 
-    // Emit the new head position
     emit('update:head', finalHead)
 
-    // Update the drag handle to match cursor position
     dragHandle.absolutePosition({
         x: cursorX,
         y: cursorY
     })
 }
 </script>
+
+<style>
+.math-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: white;
+    border: 2px solid red;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.katex {
+    font-size: 1em !important;
+}
+
+.katex-html {
+    white-space: nowrap !important;
+}
+</style>
+
