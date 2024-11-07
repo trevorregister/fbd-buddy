@@ -5,7 +5,8 @@
         <v-circle :config="dragHandleConfig" @dragmove="handleArrowHeadDragMove" />
         <v-label :config="labelGroupConfig">
             <v-tag :config="labelTagConfig" />
-            <v-text :config="labelTextConfig" />
+            <v-text :config="mainTextConfig" />
+            <v-text :config="subscriptConfig" />
         </v-label>
         <v-line v-if="showComponents" :config="xComponentConfig" />
         <v-line v-if="showComponents" :config="yComponentConfig" />
@@ -16,6 +17,8 @@
 import { computed, ref, watch } from 'vue'
 import { gridToCanvasCoordinates, canvasToGridCoordinates } from '~/utils/coordinates'
 import { useDebounceFn } from '@vueuse/core'
+import katex from 'katex'
+import 'katex/dist/katex.min.css'
 
 const props = defineProps({
     tail: {
@@ -107,8 +110,6 @@ const labelGroupConfig = computed(() => {
 
 const labelTagConfig = computed(() => ({
     fill: 'white',
-    stroke: 'red',
-    strokeWidth: 2,
     cornerRadius: 4,
     pointerDirection: 'none',
     pointerWidth: 0,
@@ -116,13 +117,33 @@ const labelTagConfig = computed(() => ({
     lineJoin: 'round'
 }))
 
-const labelTextConfig = computed(() => ({
-    text: props.label || 'No Label',
+const parsedLabel = computed(() => {
+    const cleanLabel = props.label.replace(/[{}]/g, '')
+    const parts = cleanLabel.split('_')
+    return {
+        main: parts[0] || '',
+        subscript: parts[1] || ''
+    }
+})
+
+const mainTextConfig = computed(() => ({
+    text: parsedLabel.value.main,
     fontSize: 14,
-    fontFamily: 'Arial',
+    fontFamily: 'KaTeX_Math, Arial',
     fill: 'black',
     padding: 5,
     align: 'center'
+}))
+
+const subscriptConfig = computed(() => ({
+    text: parsedLabel.value.subscript,
+    fontSize: 10,  // Smaller size for subscript
+    fontFamily: 'KaTeX_Math, Arial',
+    fill: 'black',
+    padding: 5,
+    align: 'center',
+    x: 8,  // Offset to position after main text
+    y: 4   // Offset downward for subscript position
 }))
 
 const xComponentConfig = computed(() => {
@@ -172,6 +193,18 @@ const handleArrowHeadDragMove = (e) => {
         y: cursorY
     })
 }
+
+const renderKatex = (text) => {
+  try {
+    return katex.renderToString(text, {
+      throwOnError: false,
+      displayMode: true
+    });
+  } catch (e) {
+    console.error('KaTeX error:', e);
+    return text;
+  }
+}
 </script>
 
 <style>
@@ -193,6 +226,13 @@ const handleArrowHeadDragMove = (e) => {
 
 .katex-html {
     white-space: nowrap !important;
+}
+
+@font-face {
+    font-family: 'KaTeX_Math';
+    src: url('node_modules/katex/dist/fonts/KaTeX_Math-Italic.woff2') format('woff2');
+    font-style: italic;
+    font-weight: normal;
 }
 </style>
 

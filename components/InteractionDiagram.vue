@@ -326,7 +326,7 @@ input:focus {
   display: flex;
   justify-content: center;
   align-items: center;
-  color: red;
+  background: white;
   font-size: 14px;
 }
 
