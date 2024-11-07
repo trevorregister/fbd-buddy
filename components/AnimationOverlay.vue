@@ -10,6 +10,7 @@
             :showComponents="false"
             :id="`anim-${vector.id}`"
             :canDrag="false"
+            :label="vector.label"
           />
         </v-layer>
       </v-stage>
@@ -65,6 +66,8 @@ const GRID_SCALE = 15 // Match the value from ForceAdditionDiagram
 
 const animateVectors = async () => {
   console.log('Starting vector animation with vectors:', props.forceVectors)
+  // Log each vector's label
+  props.forceVectors.forEach(v => console.log('Vector label:', v.label))
   
   await new Promise(resolve => {
     const checkLayer = () => {
@@ -90,6 +93,7 @@ const animateVectors = async () => {
   for (let i = 0; i < props.forceVectors.length; i++) {
     const vector = props.forceVectors[i]
     console.log('Starting animation for vector:', vector)
+    console.log('Vector label before animation:', vector.label)
     
     // Calculate vector displacement
     const dx = vector.head.x - vector.tail.x
@@ -98,24 +102,30 @@ const animateVectors = async () => {
     // Calculate vector angle for arrowhead offset
     const angle = Math.atan2(dy, dx)
     
-    // Calculate start and end positions
+    // Calculate start and end positions with explicit label
     const startVector = {
-      ...vector,
-      id: vector.id
+      id: vector.id,
+      tail: { ...vector.tail },
+      head: { ...vector.head },
+      label: vector.label,
     }
+    console.log('Start vector created with label:', startVector.label)
 
     // Calculate end position (tail at cumulative position)
     const endVector = {
-      ...vector,
+      id: vector.id,
       tail: { ...cumulative },
       head: {
         x: cumulative.x + dx,
         y: cumulative.y + dy
-      }
+      },
+      label: vector.label,
     }
+    console.log('End vector created with label:', endVector.label)
 
-    // Add vector to animation
+    // Add vector to animation with explicit label
     animatingVectors.value = [...animatingVectors.value, startVector]
+    console.log('Current animating vectors:', animatingVectors.value)
     
     // Animate the vector
     await new Promise(resolve => {
@@ -136,7 +146,8 @@ const animateVectors = async () => {
           head: {
             x: startVector.head.x + (endVector.head.x + moveDistance - startVector.head.x) * progress,
             y: startVector.head.y + (endVector.head.y - startVector.head.y) * progress
-          }
+          },
+          label: vector.label
         }
         
         // Update the animating vectors

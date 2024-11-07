@@ -140,6 +140,7 @@ const addNewVector = () => {
     id,
     type: 'Gravitational',
     name: 'F_g',
+    label: 'F_g',
     renderedName: '',
     objectExerting: '',
     objectExperiencing: '',

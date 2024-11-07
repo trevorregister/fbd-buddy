@@ -95,7 +95,7 @@
             v-if="isAnimating"
             ref="animationOverlay"
             :configStage="configStage"
-            :forceVectors="forceVectors"
+            :forceVectors="forceVectors.map(v => ({ ...v, label: v.name }))"
           />
         </Teleport>
         
@@ -220,6 +220,16 @@ const animationOverlay = ref(null)
 const animateVectors = async () => {
   if (isAnimating.value) return
   console.log('Starting animation sequence')
+  
+  console.log('Force vectors being passed to overlay:', 
+    forceVectors.value.map(v => ({
+      id: v.id,
+      label: v.label,
+      tail: v.tail,
+      head: v.head
+    }))
+  )
+  
   isAnimating.value = true
 
   // Get grid position
