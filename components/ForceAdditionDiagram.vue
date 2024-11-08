@@ -26,7 +26,7 @@
             @mouseleave="unhighlightVector"
           />  
           <!-- Net Force Vector -->
-          <v-group v-if="showNetForce">
+          <v-group v-if="showNetForce && props.forceVectors.length > 0">
             <v-arrow :config="netForceConfig" />
             <v-label :config="netForceLabelConfig">
               <v-tag :config="netForceLabelTagConfig" />
@@ -145,6 +145,16 @@ const netForceConfig = computed(() => {
 
 // Add these computed properties for the net force label
 const netForceLabelConfig = computed(() => {
+    // Check if netForceConfig.value and points exist
+    if (!netForceConfig.value?.points || netForceConfig.value.points.length < 4) {
+        return {
+            x: 0,
+            y: 0,
+            offsetX: -30,
+            offsetY: -20
+        }
+    }
+
     const startX = netForceConfig.value.points[0]  // Origin x
     const startY = netForceConfig.value.points[1]  // Origin y
     const endX = netForceConfig.value.points[2]    // End point x
