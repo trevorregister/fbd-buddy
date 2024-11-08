@@ -66,7 +66,9 @@
           </td>
         </tr>
         <tr class="net-force-row">
-          <td>Net Force</td>
+          <td>
+            <div class="math-content net-force-label" v-html="renderKatex({ name: 'F_net' })"></div>
+          </td>
           <td></td>
           <td>{{ isPolar ? netForceMagnitude : netForceX }}</td>
           <td>{{ isPolar ? netForceAngle : netForceY }}</td>
@@ -138,9 +140,9 @@ const addNewVector = () => {
   editingStates.value.set(id, true)
   emit('addVector', {
     id,
-    type: 'Gravitational',
-    name: 'F_g',
-    label: 'F_g',
+    type: '',
+    name: '',
+    label: '',
     renderedName: '',
     objectExerting: '',
     objectExperiencing: '',
@@ -305,9 +307,6 @@ const startEditingName = (vector) => {
 
 const finishEditingName = async (vector) => {
   editingStates.value.delete(vector.id)
-  if (!vector.name) {
-    vector.name = 'F'
-  }
   vector.renderedName = renderKatex(vector)
   emit('updateVector', {
     ...vector,
@@ -382,5 +381,24 @@ td {
   height: 48px !important;
   padding: 0 8px !important;
   vertical-align: middle !important;
+}
+
+.net-force-label :deep(.katex) {
+  font-size: 1.3em !important;  /* Adjust this value to make it bigger or smaller */
+}
+
+/* Make the numbers in the net force row bigger too */
+.net-force-row td {
+  font-size: 1.3em;
+}
+
+/* Make regular force names bigger */
+.math-content :deep(.katex) {
+    font-size: 1.5em !important;  /* Increase from 1em to 1.3em */
+}
+
+/* Keep net force even bigger or adjust if needed */
+.net-force-label :deep(.katex) {
+    font-size: 1.3em !important;
 }
 </style>

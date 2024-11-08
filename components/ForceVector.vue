@@ -3,7 +3,7 @@
         <v-line :config="lineConfig" />
         <v-regular-polygon :config="arrowHeadConfig" />
         <v-circle :config="dragHandleConfig" @dragmove="handleArrowHeadDragMove" />
-        <v-label :config="labelGroupConfig">
+        <v-label v-if="props.label" :config="labelGroupConfig">
             <v-tag :config="labelTagConfig" />
             <v-text :config="mainTextConfig" />
             <v-text :config="subscriptConfig" />
@@ -109,7 +109,7 @@ const labelGroupConfig = computed(() => {
 })
 
 const labelTagConfig = computed(() => ({
-    fill: 'white',
+    fill: props.label ? 'white' : 'transparent',
     cornerRadius: 4,
     pointerDirection: 'none',
     pointerWidth: 0,
