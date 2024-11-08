@@ -26,9 +26,14 @@
             @mouseleave="unhighlightVector"
           />  
           <!-- Net Force Vector -->
-          <v-arrow v-if="showNetForce"
-            :config="netForceConfig"
-          />
+          <v-group v-if="showNetForce">
+            <v-arrow :config="netForceConfig" />
+            <v-label :config="netForceLabelConfig">
+              <v-tag :config="netForceLabelTagConfig" />
+              <v-text :config="netForceMainTextConfig" />
+              <v-text :config="netForceSubscriptConfig" />
+            </v-label>
+          </v-group>
         </v-layer>
       </v-stage>
     </ClientOnly>
@@ -137,6 +142,52 @@ const netForceConfig = computed(() => {
     dash: [10, 5],
   }
 })
+
+// Add these computed properties for the net force label
+const netForceLabelConfig = computed(() => {
+    const startX = netForceConfig.value.points[0]  // Origin x
+    const startY = netForceConfig.value.points[1]  // Origin y
+    const endX = netForceConfig.value.points[2]    // End point x
+    const endY = netForceConfig.value.points[3]    // End point y
+    
+    // Calculate midpoint
+    const midX = (startX + endX) / 2
+    const midY = (startY + endY) / 2
+    
+    return {
+        x: midX,
+        y: midY,
+    }
+})
+
+const netForceLabelTagConfig = computed(() => ({
+  fill: 'white',
+  cornerRadius: 4,
+  pointerDirection: 'none',
+  pointerWidth: 0,
+  pointerHeight: 0,
+  lineJoin: 'round'
+}))
+
+const netForceMainTextConfig = computed(() => ({
+  text: 'F',
+  fontSize: 20,
+  fontFamily: 'KaTeX_Math, Arial',
+  fill: 'red',
+  padding: 5,
+  align: 'center'
+}))
+
+const netForceSubscriptConfig = computed(() => ({
+  text: 'net',
+  fontSize: 16,
+  fontFamily: 'KaTeX_Math, Arial',
+  fill: 'red',
+  padding: 5,
+  align: 'center',
+  x: 12,
+  y: 6
+}))
 
 // Watch for animation end and trigger net force animation
 watch(() => props.isAnimating, async (newValue, oldValue) => {

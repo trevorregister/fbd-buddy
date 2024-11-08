@@ -128,7 +128,7 @@ const parsedLabel = computed(() => {
 
 const mainTextConfig = computed(() => ({
     text: parsedLabel.value.main,
-    fontSize: 14,
+    fontSize: 20,
     fontFamily: 'KaTeX_Math, Arial',
     fill: 'black',
     padding: 5,
@@ -137,13 +137,13 @@ const mainTextConfig = computed(() => ({
 
 const subscriptConfig = computed(() => ({
     text: parsedLabel.value.subscript,
-    fontSize: 10,  // Smaller size for subscript
+    fontSize: 16,
     fontFamily: 'KaTeX_Math, Arial',
     fill: 'black',
     padding: 5,
     align: 'center',
-    x: 8,  // Offset to position after main text
-    y: 4   // Offset downward for subscript position
+    x: 12,
+    y: 6
 }))
 
 const xComponentConfig = computed(() => {
