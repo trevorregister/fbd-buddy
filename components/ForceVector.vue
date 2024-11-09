@@ -55,7 +55,7 @@ const props = defineProps({
     },
     offset: {
         type: Object,
-        default: () => ({ x: 0, y: 0 })
+        default: () => ({ x: 0, y: 0, isParallel: false })
     }
 })
 
@@ -101,7 +101,7 @@ const arrowHeadConfig = computed(() => {
         x: dx,
         y: dy,
         sides: 3,
-        radius: 10,
+        radius: props.offset.isParallel ? 6 : 10,
         fill: props.isHighlighted ? 'red' : 'black',
         rotation: angle * 180 / Math.PI + 90
     }
@@ -137,10 +137,27 @@ const labelGroupConfig = computed(() => {
     const dx = x2 - x1
     const dy = y2 - y1
     
-    return {
+    // Calculate base position at midpoint
+    const baseLabelPos = {
         x: dx / 2,
         y: dy / 2 - 30,
     }
+
+    // If this is a parallel vector, offset the label along the vector direction
+    if (props.offset.isParallel) {
+        const vectorLength = Math.sqrt(dx * dx + dy * dy)
+        const normalizedDx = dx / vectorLength
+        const normalizedDy = dy / vectorLength
+        const labelOffset = 30 // Adjust this value to control label spacing
+
+        // Use the relative index to determine label offset direction
+        const offsetDirection = props.offset.relativeIndex || 0
+        
+        baseLabelPos.x += normalizedDx * labelOffset * offsetDirection
+        baseLabelPos.y += normalizedDy * labelOffset * offsetDirection
+    }
+    
+    return baseLabelPos
 })
 
 const labelTagConfig = computed(() => ({

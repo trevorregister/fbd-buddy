@@ -106,7 +106,7 @@ const vectorOffsets = computed(() => {
   // Calculate offsets for each group
   parallelGroups.forEach(group => {
     if (group.length > 1) {
-      const offsetDistance = 20 // Adjust this value to change the spacing
+      const offsetDistance = 10
       group.forEach((vector, index) => {
         const centerIndex = (group.length - 1) / 2
         const relativeIndex = index - centerIndex
@@ -118,11 +118,18 @@ const vectorOffsets = computed(() => {
         
         offsets.set(vector.id, {
           x: (-dy / length) * offsetDistance * relativeIndex,
-          y: (dx / length) * offsetDistance * relativeIndex
+          y: (dx / length) * offsetDistance * relativeIndex,
+          isParallel: true,
+          relativeIndex
         })
       })
     } else {
-      offsets.set(group[0].id, { x: 0, y: 0 })
+      offsets.set(group[0].id, { 
+        x: 0, 
+        y: 0, 
+        isParallel: false,
+        relativeIndex: 0 
+      })
     }
   })
   

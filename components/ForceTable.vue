@@ -46,20 +46,24 @@
           </td>
           <td class="align-center">
             <v-text-field
-              :value="isPolar ? vector.magnitude : vector.xComponent"
-              @input="isPolar ? updateMagnitude(vector, $event) : updateXComponent(vector, $event)"
+              :model-value="isPolar ? vector.magnitude : vector.xComponent"
+              @update:model-value="isPolar ? updateMagnitude(vector, $event) : updateXComponent(vector, $event)"
               type="number"
               dense
               hide-details
+              @focus="$event.target.select()"
+              step="any"
             ></v-text-field>
           </td>
           <td class="align-center">
             <v-text-field
-              :value="isPolar ? vector.angle : vector.yComponent"
-              @input="isPolar ? updateAngle(vector, $event) : updateYComponent(vector, $event)"
+              :model-value="isPolar ? vector.angle : vector.yComponent"
+              @update:model-value="isPolar ? updateAngle(vector, $event) : updateYComponent(vector, $event)"
               type="number"
               dense
               hide-details
+              @focus="$event.target.select()"
+              step="any"
             ></v-text-field>
           </td>
           <td class="align-center">
@@ -202,40 +206,52 @@ function calculateAngle(vector) {
   return angle
 }
 
-const updateXComponent = (vector, event) => {
-  vector.xComponent = Number(event.target.value);
-  vector.head.x = vector.tail.x + vector.xComponent;
-  vector.magnitude = roundToTwoDecimals(calculateMagnitude(vector));
-  vector.angle = roundToTwoDecimals(calculateAngle(vector));
-  emit('updateVector', vector);
+const updateXComponent = (vector, value) => {
+  const numValue = Number(value)
+  if (!isNaN(numValue)) {
+    vector.xComponent = numValue
+    vector.head.x = vector.tail.x + numValue
+    vector.magnitude = roundToTwoDecimals(calculateMagnitude(vector))
+    vector.angle = roundToTwoDecimals(calculateAngle(vector))
+    forceVectorsStore.updateVector(vector)
+  }
 }
 
-const updateYComponent = (vector, event) => {
-  vector.yComponent = Number(event.target.value);
-  vector.head.y = vector.tail.y + vector.yComponent;
-  vector.magnitude = roundToTwoDecimals(calculateMagnitude(vector));
-  vector.angle = roundToTwoDecimals(calculateAngle(vector));
-  emit('updateVector', vector);
+const updateYComponent = (vector, value) => {
+  const numValue = Number(value)
+  if (!isNaN(numValue)) {
+    vector.yComponent = numValue
+    vector.head.y = vector.tail.y + numValue
+    vector.magnitude = roundToTwoDecimals(calculateMagnitude(vector))
+    vector.angle = roundToTwoDecimals(calculateAngle(vector))
+    forceVectorsStore.updateVector(vector)
+  }
 }
 
-const updateMagnitude = (vector, event) => {
-  vector.magnitude = Number(event.target.value);
-  const angle = vector.angle * (Math.PI / 180);
-  vector.head.x = vector.tail.x + vector.magnitude * Math.cos(angle);
-  vector.head.y = vector.tail.y + vector.magnitude * Math.sin(angle);
-  vector.xComponent = roundToTwoDecimals(vector.head.x - vector.tail.x);
-  vector.yComponent = roundToTwoDecimals(vector.head.y - vector.tail.y);
-  emit('updateVector', vector);
+const updateMagnitude = (vector, value) => {
+  const numValue = Number(value)
+  if (!isNaN(numValue)) {
+    vector.magnitude = numValue
+    const angle = vector.angle * (Math.PI / 180)
+    vector.head.x = vector.tail.x + numValue * Math.cos(angle)
+    vector.head.y = vector.tail.y + numValue * Math.sin(angle)
+    vector.xComponent = roundToTwoDecimals(vector.head.x - vector.tail.x)
+    vector.yComponent = roundToTwoDecimals(vector.head.y - vector.tail.y)
+    forceVectorsStore.updateVector(vector)
+  }
 }
 
-const updateAngle = (vector, event) => {
-  vector.angle = Number(event.target.value);
-  const angle = vector.angle * (Math.PI / 180);
-  vector.head.x = vector.tail.x + vector.magnitude * Math.cos(angle);
-  vector.head.y = vector.tail.y + vector.magnitude * Math.sin(angle);
-  vector.xComponent = roundToTwoDecimals(vector.head.x - vector.tail.x);
-  vector.yComponent = roundToTwoDecimals(vector.head.y - vector.tail.y);
-  emit('updateVector', vector);
+const updateAngle = (vector, value) => {
+  const numValue = Number(value)
+  if (!isNaN(numValue)) {
+    vector.angle = numValue
+    const angle = numValue * (Math.PI / 180)
+    vector.head.x = vector.tail.x + vector.magnitude * Math.cos(angle)
+    vector.head.y = vector.tail.y + vector.magnitude * Math.sin(angle)
+    vector.xComponent = roundToTwoDecimals(vector.head.x - vector.tail.x)
+    vector.yComponent = roundToTwoDecimals(vector.head.y - vector.tail.y)
+    forceVectorsStore.updateVector(vector)
+  }
 }
 
 const openSettingsModal = () => {
