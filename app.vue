@@ -6,8 +6,14 @@
         <v-row>
           <SettingsModal @save-settings="handleSaveSettings"/>
         </v-row>
-        <div class="grid-row" style="position: relative;">
-          <v-col cols="6">
+        <div class="diagram-container">
+          <AnimationOverlay
+            ref="animationOverlay"
+            :configStage="configStage"
+            :forceVectors="forceVectorsStore.vectors.map(v => ({ ...v, label: v.name }))"
+            class="animation-overlay"
+          />
+          <div class="diagram-column">
             <FreeBodyDiagram
               v-model:objectExperiencingForce="objectExperiencingForce"
               :configStage="configStage"
@@ -19,8 +25,8 @@
               :highlightedVectorId="forceVectorsStore.highlightedVectorId"
               @updateVectorHead="updateVectorHead"
             />
-          </v-col>
-          <v-col cols="6" class="grid-column">
+          </div>
+          <div class="diagram-column">
             <div class="tabs-container">
               <v-tabs v-model="activeTab">
                 <v-tab value="interaction">Interaction Diagram</v-tab>
@@ -52,18 +58,8 @@
                 </v-window-item>
               </v-window>
             </div>
-          </v-col>
+          </div>
         </div>
-        
-        <!-- Animation overlay -->
-        <Teleport to="body">
-          <AnimationOverlay
-            v-if="isAnimating"
-            ref="animationOverlay"
-            :configStage="configStage"
-            :forceVectors="forceVectorsStore.vectors.map(v => ({ ...v, label: v.name }))"
-          />
-        </Teleport>
         
         <v-row>
           <v-btn @click="triggerImageUpload">
@@ -167,10 +163,6 @@ const animateVectors = async () => {
   
   isAnimating.value = true
 
-  // Get grid position
-  const gridPos = getGridPosition()
-  console.log('Grid position:', gridPos)
-
   await nextTick()
 
   try {
@@ -179,7 +171,6 @@ const animateVectors = async () => {
       return
     }
 
-    animationOverlay.value.setPosition(gridPos)
     await animationOverlay.value.animateVectors()
   } catch (error) {
     console.error('Animation error:', error)
@@ -188,55 +179,6 @@ const animateVectors = async () => {
     console.log('Animation sequence complete')
   }
 }
-
-const stage = ref(null)
-const layer = ref(null)
-
-const leftGrid = ref(null)
-
-const getGridPosition = () => {
-  if (leftGrid.value) {
-    const leftContainer = leftGrid.value.$el
-    const leftRect = leftContainer.getBoundingClientRect()
-    
-    // Get the right grid element
-    const rightGrid = document.querySelector('.v-window-item--active .grid-stage')
-    const rightRect = rightGrid?.getBoundingClientRect()
-    
-    console.log('Left grid rect:', leftRect)
-    console.log('Right grid rect:', rightRect)
-    
-    // Calculate total width including the gap
-    const totalWidth = rightRect ? (rightRect.right - leftRect.left) : leftRect.width * 2
-    console.log('Total width:', totalWidth)
-    
-    return {
-      left: leftRect.left,
-      top: leftRect.top,
-      totalWidth: totalWidth
-    }
-  }
-  return { left: 0, top: 0, totalWidth: 1020 }
-}
-
-onMounted(() => {
-  nextTick(() => {
-    console.log('Stage ref:', stage.value)
-    console.log('Layer ref:', layer.value)
-    if (stage.value && layer.value) {
-      console.log('Stage node:', stage.value.getNode())
-      console.log('Layer node:', layer.value.getNode())
-    }
-  })
-
-  watch([stage, layer], ([newStage, newLayer]) => {
-    if (newStage && newLayer) {
-      console.log('Stage and Layer are ready')
-      console.log('Stage children:', newStage.getNode().children)
-      console.log('Layer children:', newLayer.getNode().children)
-    }
-  })
-})
 
 const highlightVector = (id) => {
   forceVectorsStore.setHighlightedVector(id)
@@ -257,27 +199,33 @@ const activeTab = ref('interaction')
 body{
   max-width: clamp(320px, 90%, 1000px);
 }
-.grid-row {
+.diagram-container {
+  display: grid;
+  grid-template-columns: 500px 500px;
+  gap: 100px;
   position: relative;
-  display: flex;
-  align-items: stretch;
-  min-height: 500px; /* Match your grid height */
+  min-height: 500px;
+  margin: 0;
+  padding: 0;
 }
 
-.grid-column {
+.diagram-column {
+  width: 500px;
+  padding: 0;
+}
+
+.animation-overlay {
+  position: absolute;
+  top: 48px; /* Account for header */
+  left: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.tabs-container {
   display: flex;
   flex-direction: column;
-}
-
-.grid-header {
-  height: 48px; /* Match the height of the tabs */
-  display: flex;
-  align-items: center;
-}
-
-.grid-stage {
-  width: 100%;
-  height: 500px; /* Adjust this value to match your desired grid height */
+  height: 100%;
 }
 
 .grid-window {
@@ -290,23 +238,5 @@ body{
 .v-window-item {
   height: 100%;
   overflow: auto;
-}
-
-.tabs-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.free-body-diagram-label {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.label-content {
-  display: flex;
-  align-items: center;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <div id="animation-container" class="animation-overlay" :style="overlayStyle">
+  <div class="animation-overlay-container">
     <ClientOnly>
       <v-stage :config="overlayConfig" class="overlay-stage">
         <v-layer ref="layer">
@@ -10,7 +10,7 @@
             :showComponents="false"
             :id="`anim-${vector.id}`"
             :canDrag="false"
-            :label="vector.label"
+            :label="vector.name"
           />
         </v-layer>
       </v-stage>
@@ -19,10 +19,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import Konva from 'konva'
 import ForceVector from './ForceVector.vue'
-import { gridToCanvasCoordinates } from '~/utils/coordinates'
 import { useForceVectorsStore } from '~/stores/forceVectors'
 
 const props = defineProps({
@@ -34,85 +33,45 @@ const props = defineProps({
 })
 
 const layer = ref(null)
-const isMounted = ref(false)
-const position = ref({ left: 0, top: 0, totalWidth: 1020 })
+const animatingVectors = ref([])
 
-const totalWidth = computed(() => position.value.totalWidth)
-
+// Update overlay config to match grid size exactly
 const overlayConfig = computed(() => ({
-  width: totalWidth.value,
+  width: props.configStage.width * 2 + 100, // Width of both grids plus 100px gap
   height: props.configStage.height,
 }))
 
-const animatingVectors = ref([])
-
-const overlayStyle = computed(() => ({
-  position: 'fixed',
-  top: `${position.value.top}px`,
-  left: `${position.value.left}px`,
-  width: `${totalWidth.value}px`,
-  height: `${props.configStage.height}px`,
-  pointerEvents: 'none',
-  zIndex: 9999,
-  background: 'transparent',
-  border: '1px solid red',
-}))
-
-const setPosition = (pos) => {
-  position.value = pos
-}
-
-const ARROW_HEAD_LENGTH = 120 // Match the value from ForceAdditionDiagram
-const GRID_SCALE = 15 // Match the value from ForceAdditionDiagram
+const ARROW_HEAD_LENGTH = 120
+const GRID_SCALE = 15
 
 const animateVectors = async () => {
-  console.log('Starting vector animation with vectors:', props.forceVectors)
-  // Log each vector's label
-  props.forceVectors.forEach(v => console.log('Vector label:', v.label))
-  
-  await new Promise(resolve => {
-    const checkLayer = () => {
-      if (layer.value?.getNode()) {
-        resolve()
-      } else {
-        setTimeout(checkLayer, 100)
-      }
-    }
-    checkLayer()
-  })
-
-  console.log('Layer is ready:', layer.value.getNode())
+  console.log('Starting vector animation')
   animatingVectors.value = []
 
   // Calculate the distance to move to the center of the right grid
-  const moveDistance = props.configStage.width + 82
+  const moveDistance = props.configStage.width + 100 // 500px (grid width) + 100px (gap)
 
   // Keep track of cumulative position in the right grid
   let cumulative = { x: 0, y: 0 }
 
   // Animate each vector one by one
-  for (let i = 0; i < props.forceVectors.length; i++) {
-    const vector = props.forceVectors[i]
-    console.log('Starting animation for vector:', vector)
-    console.log('Vector label before animation:', vector.label)
+  for (const vector of props.forceVectors) {
+    console.log('Animating vector:', vector)
     
     // Calculate vector displacement
     const dx = vector.head.x - vector.tail.x
     const dy = vector.head.y - vector.tail.y
-    
-    // Calculate vector angle for arrowhead offset
     const angle = Math.atan2(dy, dx)
     
-    // Calculate start and end positions with explicit label
+    // Start position - use the exact position from the FBD
     const startVector = {
       id: vector.id,
       tail: { ...vector.tail },
       head: { ...vector.head },
-      label: vector.label,
+      name: vector.name
     }
-    console.log('Start vector created with label:', startVector.label)
 
-    // Calculate end position (tail at cumulative position)
+    // End position in the FAD
     const endVector = {
       id: vector.id,
       tail: { ...cumulative },
@@ -120,26 +79,25 @@ const animateVectors = async () => {
         x: cumulative.x + dx,
         y: cumulative.y + dy
       },
-      label: vector.label,
+      name: vector.name
     }
-    console.log('End vector created with label:', endVector.label)
 
-    // Add vector to animation with explicit label
+    // Add vector to animation with its original position
     animatingVectors.value = [...animatingVectors.value, startVector]
-    console.log('Current animating vectors:', animatingVectors.value)
     
     // Animate the vector
     await new Promise(resolve => {
-      let startTime = Date.now()
-      const duration = 1000
+      const startTime = Date.now()
+      const duration = 1000 // 1 second animation
 
-      const anim = new Konva.Animation(frame => {
+      const animate = () => {
         const elapsed = Date.now() - startTime
         const progress = Math.min(elapsed / duration, 1)
         
         // Calculate current position
         const currentVector = {
-          ...vector,
+          id: vector.id,
+          name: vector.name,
           tail: {
             x: startVector.tail.x + (endVector.tail.x + moveDistance - startVector.tail.x) * progress,
             y: startVector.tail.y + (endVector.tail.y - startVector.tail.y) * progress
@@ -147,8 +105,7 @@ const animateVectors = async () => {
           head: {
             x: startVector.head.x + (endVector.head.x + moveDistance - startVector.head.x) * progress,
             y: startVector.head.y + (endVector.head.y - startVector.head.y) * progress
-          },
-          label: vector.label
+          }
         }
         
         // Update the animating vectors
@@ -156,36 +113,38 @@ const animateVectors = async () => {
           v.id === vector.id ? currentVector : v
         )
         
-        if (progress >= 1) {
-          console.log('Vector animation complete:', vector.id)
-          anim.stop()
+        if (progress < 1) {
+          requestAnimationFrame(animate)
+        } else {
           resolve()
         }
-      }, layer.value.getNode())
+      }
 
-      console.log('Starting animation for vector:', vector.id)
-      anim.start()
+      requestAnimationFrame(animate)
     })
 
-    // Update cumulative position to be at the tip of the arrowhead
+    // Update cumulative position for next vector
     cumulative = {
-      x: endVector.head.x + (ARROW_HEAD_LENGTH * Math.cos(angle) / GRID_SCALE),
-      y: endVector.head.y + (ARROW_HEAD_LENGTH * Math.sin(angle) / GRID_SCALE)
+      x: endVector.head.x,
+      y: endVector.head.y
     }
 
     // Pause between vectors
     await new Promise(resolve => setTimeout(resolve, 200))
   }
 
-  console.log('All vector animations complete')
+  // Clear the vectors after animation is complete
+  animatingVectors.value = []
+  console.log('Animation complete')
 }
 
-defineExpose({ animateVectors, layer, isMounted, setPosition })
+defineExpose({ animateVectors })
 </script>
 
 <style scoped>
-.animation-overlay {
-  pointer-events: none;
+.animation-overlay-container {
+  width: 1100px; /* Two grid widths (500px each) plus 100px gap */
+  height: 500px;
 }
 
 .overlay-stage {

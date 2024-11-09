@@ -3,10 +3,10 @@
         <v-line :config="lineConfig" />
         <v-regular-polygon :config="arrowHeadConfig" />
         <v-circle :config="dragHandleConfig" @dragmove="handleArrowHeadDragMove" />
-        <v-label v-if="props.label" :config="labelGroupConfig">
+        <v-label v-if="props.name || props.label" :config="labelGroupConfig">
             <v-tag :config="labelTagConfig" />
             <v-text :config="mainTextConfig" />
-            <v-text :config="subscriptConfig" />
+            <v-text v-if="parsedLabel.subscript" :config="subscriptConfig" />
         </v-label>
         <v-line v-if="showComponents" :config="xComponentConfig" />
         <v-line v-if="showComponents" :config="yComponentConfig" />
@@ -47,20 +47,37 @@ const props = defineProps({
     },
     label: {
         type: String,
-        default: 'No Label'
+        default: ''
+    },
+    name: {
+        type: String,
+        default: ''
+    },
+    offset: {
+        type: Object,
+        default: () => ({ x: 0, y: 0 })
     }
 })
 
 const emit = defineEmits(['update:head'])
 
 const groupConfig = computed(() => {
-    const { x, y } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const { x, y } = gridToCanvasCoordinates(
+        props.tail.x + props.offset.x,
+        props.tail.y + props.offset.y
+    )
     return { id: props.id, x, y }
 })
 
 const lineConfig = computed(() => {
-    const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
-    const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(
+        props.head.x + props.offset.x,
+        props.head.y + props.offset.y
+    )
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(
+        props.tail.x + props.offset.x,
+        props.tail.y + props.offset.y
+    )
     return {
         points: [0, 0, x2 - x1, y2 - y1],
         stroke: props.isHighlighted ? 'red' : 'black',
@@ -69,8 +86,14 @@ const lineConfig = computed(() => {
 })
 
 const arrowHeadConfig = computed(() => {
-    const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
-    const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(
+        props.head.x + props.offset.x,
+        props.head.y + props.offset.y
+    )
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(
+        props.tail.x + props.offset.x,
+        props.tail.y + props.offset.y
+    )
     const dx = x2 - x1
     const dy = y2 - y1
     const angle = Math.atan2(dy, dx)
@@ -85,8 +108,14 @@ const arrowHeadConfig = computed(() => {
 })
 
 const dragHandleConfig = computed(() => {
-    const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
-    const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(
+        props.head.x + props.offset.x,
+        props.head.y + props.offset.y
+    )
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(
+        props.tail.x + props.offset.x,
+        props.tail.y + props.offset.y
+    )
     return {
         x: x2 - x1,
         y: y2 - y1,
@@ -97,8 +126,14 @@ const dragHandleConfig = computed(() => {
 })
 
 const labelGroupConfig = computed(() => {
-    const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
-    const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(
+        props.head.x + props.offset.x,
+        props.head.y + props.offset.y
+    )
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(
+        props.tail.x + props.offset.x,
+        props.tail.y + props.offset.y
+    )
     const dx = x2 - x1
     const dy = y2 - y1
     
@@ -109,7 +144,7 @@ const labelGroupConfig = computed(() => {
 })
 
 const labelTagConfig = computed(() => ({
-    fill: props.label ? 'white' : 'transparent',
+    fill: (props.name || props.label) ? 'white' : 'transparent',
     cornerRadius: 4,
     pointerDirection: 'none',
     pointerWidth: 0,
@@ -118,7 +153,9 @@ const labelTagConfig = computed(() => ({
 }))
 
 const parsedLabel = computed(() => {
-    const cleanLabel = props.label.replace(/[{}]/g, '')
+    const textToUse = props.name || props.label || ''
+    if (!textToUse) return { main: '', subscript: '' }
+    const cleanLabel = textToUse.replace(/[{}]/g, '')
     const parts = cleanLabel.split('_')
     return {
         main: parts[0] || '',
@@ -130,7 +167,7 @@ const mainTextConfig = computed(() => ({
     text: parsedLabel.value.main,
     fontSize: 20,
     fontFamily: 'KaTeX_Math, Arial',
-    fill: 'black',
+    fill: props.isHighlighted ? 'red' : 'black',
     padding: 5,
     align: 'center'
 }))
@@ -139,7 +176,7 @@ const subscriptConfig = computed(() => ({
     text: parsedLabel.value.subscript,
     fontSize: 16,
     fontFamily: 'KaTeX_Math, Arial',
-    fill: 'black',
+    fill: props.isHighlighted ? 'red' : 'black',
     padding: 5,
     align: 'center',
     x: 12,
@@ -147,10 +184,16 @@ const subscriptConfig = computed(() => ({
 }))
 
 const xComponentConfig = computed(() => {
-    const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
-    const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(
+        props.head.x + props.offset.x,
+        props.head.y + props.offset.y
+    )
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(
+        props.tail.x + props.offset.x,
+        props.tail.y + props.offset.y
+    )
     return {
-        points: [0, 0, x2 - x1, y1 - y1],
+        points: [0, 0, x2 - x1, 0],
         stroke: 'blue',
         strokeWidth: 2,
         dash: [5, 5]
@@ -158,8 +201,14 @@ const xComponentConfig = computed(() => {
 })
 
 const yComponentConfig = computed(() => {
-    const { x: x2, y: y2 } = gridToCanvasCoordinates(props.head.x, props.head.y)
-    const { x: x1, y: y1 } = gridToCanvasCoordinates(props.tail.x, props.tail.y)
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(
+        props.head.x + props.offset.x,
+        props.head.y + props.offset.y
+    )
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(
+        props.tail.x + props.offset.x,
+        props.tail.y + props.offset.y
+    )
     return {
         points: [x2 - x1, 0, x2 - x1, y2 - y1],
         stroke: 'red',
@@ -181,9 +230,10 @@ const handleArrowHeadDragMove = (e) => {
 
     const gridPos = canvasToGridCoordinates(cursorX, cursorY)
 
+    // Subtract the offset when emitting the new head position
     const finalHead = {
-        x: gridPos.x,
-        y: gridPos.y
+        x: gridPos.x - props.offset.x,
+        y: gridPos.y - props.offset.y
     }
 
     emit('update:head', finalHead)
@@ -215,7 +265,6 @@ const renderKatex = (text) => {
     justify-content: center;
     align-items: center;
     background: white;
-    border: 2px solid red;
     border-radius: 4px;
     font-size: 14px;
 }
