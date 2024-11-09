@@ -3,7 +3,7 @@
     <svg
       ref="svgCanvas"
       :width="canvasSize"
-      :height="canvasSize -100"
+      :height="canvasSize"
       @mousedown="onCanvasMouseDown"
       style="border:1px solid black"
     >
@@ -70,8 +70,8 @@
       </g>
     </svg>
 
-    <!-- Buttons -->
-    <div style="margin-top:10px;">
+    <!-- Updated button container with only Object and Interaction buttons -->
+    <div class="button-container">
       <v-btn @click="addObject" class="mr-4">+ Object</v-btn>
       <v-btn @click="showInteractionDialog = true" :disabled="selectedObjects.length !== 2">
         + Interaction
@@ -268,13 +268,13 @@ export default {
         const newX = event.clientX - rect.left - this.dragData.offsetX;
         const newY = event.clientY - rect.top - this.dragData.offsetY;
         
-        // Constrain movement within canvas bounds
+        // Update constraint to use full canvasSize
         const object = this.dragData.object;
         const halfWidth = this.objectWidth / 2;
         const halfHeight = this.objectHeight / 2;
         
         object.x = Math.max(halfWidth, Math.min(this.canvasSize - halfWidth, newX));
-        object.y = Math.max(halfHeight, Math.min(this.canvasSize - 100 - halfHeight, newY));
+        object.y = Math.max(halfHeight, Math.min(this.canvasSize - halfHeight, newY));
       }
     },
     onMouseUp() {
@@ -338,5 +338,16 @@ input:focus {
 
 .katex-display {
   margin: 0 !important;
+}
+
+.button-container {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ml-4 {
+  margin-left: 16px;
 }
 </style> 

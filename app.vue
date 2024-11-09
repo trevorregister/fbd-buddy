@@ -6,14 +6,16 @@
         <v-row>
           <SettingsModal @save-settings="handleSaveSettings"/>
         </v-row>
+
         <div class="diagram-container">
           <AnimationOverlay
             ref="animationOverlay"
             :configStage="configStage"
+            :hideLabels="hideLabels"
             :forceVectors="forceVectorsStore.vectors.map(v => ({ ...v, label: v.name }))"
             class="animation-overlay"
           />
-          <div class="diagram-column">
+          <div class="left-column">
             <FreeBodyDiagram
               v-model:objectExperiencingForce="objectExperiencingForce"
               :configStage="configStage"
@@ -26,6 +28,11 @@
               :highlightedVectorId="forceVectorsStore.highlightedVectorId"
               @updateVectorHead="updateVectorHead"
             />
+            <div class="button-container">
+              <v-btn @click="triggerImageUpload">
+                Upload Background Image
+              </v-btn>
+            </div>
           </div>
           <div class="diagram-column">
             <div class="tabs-container">
@@ -37,7 +44,9 @@
 
               <v-window v-model="activeTab" class="grid-window">
                 <v-window-item value="interaction">
-                  <InteractionDiagram />
+                  <InteractionDiagram 
+                    @triggerImageUpload="triggerImageUpload"
+                  />
                 </v-window-item>
 
                 <v-window-item value="forceTable">
@@ -62,19 +71,14 @@
             </div>
           </div>
         </div>
-        
-        <v-row>
-          <v-btn @click="triggerImageUpload">
-            Upload Background Image
-          </v-btn>
-          <input
-            type="file"
-            ref="fileInput"
-            style="display: none"
-            accept="image/*"
-            @change="handleImageUpload"
-          />
-        </v-row>
+
+        <input
+          type="file"
+          ref="fileInput"
+          style="display: none"
+          accept="image/*"
+          @change="handleImageUpload"
+        />
       </v-container>
     </v-main>
   </v-app>
@@ -242,5 +246,26 @@ body{
 .v-window-item {
   height: 100%;
   overflow: auto;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.left-column {
+  width: 500px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
 }
 </style>
