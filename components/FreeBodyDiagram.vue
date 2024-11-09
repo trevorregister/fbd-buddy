@@ -42,6 +42,7 @@
               :isHighlighted="vector.id === forceVectorsStore.highlightedVectorId"
               :label="vector.name"
               :offset="vectorOffsets.get(vector.id) || { x: 0, y: 0 }"
+              :hideLabels="hideLabels"
               @update:head="(newHead) => updateVectorHead(vector.id, newHead)"
             />  
           </v-layer>
@@ -65,6 +66,7 @@ const props = defineProps({
   hideGrid: Boolean,
   showComponents: Boolean,
   isAnimating: Boolean,
+  hideLabels: Boolean
 })
 
 const emit = defineEmits(['updateVectorHead', 'update:objectExperiencingForce'])

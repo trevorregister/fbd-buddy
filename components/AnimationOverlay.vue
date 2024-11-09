@@ -11,6 +11,7 @@
             :id="`anim-${vector.id}`"
             :canDrag="false"
             :label="vector.name"
+            :hideLabels="hideLabels"
           />
         </v-layer>
       </v-stage>
@@ -29,6 +30,10 @@ const props = defineProps({
   forceVectors: {
     type: Array,
     required: true
+  },
+  hideLabels: {
+    type: Boolean,
+    default: false
   }
 })
 

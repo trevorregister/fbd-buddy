@@ -4,14 +4,18 @@
         <v-card class="pa-3">
             <v-card-title>Settings</v-card-title>
             <v-card-text>
-                <v-checkbox
-                    :model-value="showComponents" 
-                    @update:model-value="showComponents = $event"
-                    label="Show Vector Components"/>
-                <v-checkbox
-                    :model-value="hideGrid"
-                    @update:model-value="hideGrid = $event" 
-                    label="Hide Grid"/>
+                <v-switch
+                    v-model="showComponents"
+                    label="Show Components"
+                ></v-switch>
+                <v-switch
+                    v-model="hideGrid"
+                    label="Hide Grid"
+                ></v-switch>
+                <v-switch
+                    v-model="hideLabels"
+                    label="Hide Labels"
+                ></v-switch>
             </v-card-text>
             <v-card-actions>
                 <v-btn @click="saveAndClose">
@@ -26,11 +30,14 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
 const emit = defineEmits(['saveSettings'])
 
 const showModal = ref(false)
 const showComponents = ref(false)
 const hideGrid = ref(false)
+const hideLabels = ref(false)
 
 const toggleShowModal = () => {
     showModal.value = !showModal.value
@@ -39,7 +46,8 @@ const toggleShowModal = () => {
 const saveAndClose = () => {
     const settings = {
         newShowComponents: showComponents.value,
-        newHideGrid: hideGrid.value
+        newHideGrid: hideGrid.value,
+        newHideLabels: hideLabels.value
     }
     emit('saveSettings', settings)
     showModal.value = !showModal.value

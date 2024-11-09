@@ -22,13 +22,14 @@
             :canDrag="false"
             :label="vector.name"
             :highlighted="vector.id === forceVectorsStore.highlightedVectorId"
+            :hideLabels="hideLabels"
             @mouseenter="highlightVector(vector.id)"
             @mouseleave="unhighlightVector"
           />  
           <!-- Net Force Vector -->
           <v-group v-if="showNetForce && forceVectorsStore.vectors.length > 0">
             <v-arrow :config="netForceConfig" />
-            <v-label :config="netForceLabelConfig">
+            <v-label v-if="!hideLabels" :config="netForceLabelConfig">
               <v-tag :config="netForceLabelTagConfig" />
               <v-text :config="netForceMainTextConfig" />
               <v-text :config="netForceSubscriptConfig" />
@@ -68,6 +69,10 @@ const props = defineProps({
     required: true
   },
   isAnimating: {
+    type: Boolean,
+    default: false
+  },
+  hideLabels: {
     type: Boolean,
     default: false
   }

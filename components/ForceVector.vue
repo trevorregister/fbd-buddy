@@ -3,7 +3,10 @@
         <v-line :config="lineConfig" />
         <v-regular-polygon :config="arrowHeadConfig" />
         <v-circle :config="dragHandleConfig" @dragmove="handleArrowHeadDragMove" />
-        <v-label v-if="props.name || props.label" :config="labelGroupConfig">
+        <v-label 
+            v-if="!props.hideLabels && (props.name || props.label)" 
+            :config="labelGroupConfig"
+        >
             <v-tag :config="labelTagConfig" />
             <v-text :config="mainTextConfig" />
             <v-text v-if="parsedLabel.subscript" :config="subscriptConfig" />
@@ -56,6 +59,10 @@ const props = defineProps({
     offset: {
         type: Object,
         default: () => ({ x: 0, y: 0, isParallel: false })
+    },
+    hideLabels: {
+        type: Boolean,
+        default: false
     }
 })
 

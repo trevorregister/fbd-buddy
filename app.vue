@@ -21,6 +21,7 @@
               :forceVectors="forceVectorsStore.vectors"
               :hideGrid="hideGrid"
               :showComponents="showComponents"
+              :hideLabels="hideLabels"
               :isAnimating="isAnimating"
               :highlightedVectorId="forceVectorsStore.highlightedVectorId"
               @updateVectorHead="updateVectorHead"
@@ -52,6 +53,7 @@
                     :configStage="configStage"
                     :hideGrid="hideGrid"
                     :showComponents="showComponents"
+                    :hideLabels="hideLabels"
                     :isAnimating="isAnimating"
                     @animate="animateVectors"
                   />
@@ -93,6 +95,7 @@ import { useForceVectorsStore } from '~/stores/forceVectors'
 
 const showComponents = ref(false) 
 const hideGrid = ref(false)
+const hideLabels = ref(false)
 
 const configStage = {
   width: 500,
@@ -106,9 +109,10 @@ const handleClearVectors = () => {
 }
 
 const handleSaveSettings = (settings) => {
-  const {newShowComponents, newHideGrid} = settings
+  const {newShowComponents, newHideGrid, newHideLabels} = settings
   showComponents.value = newShowComponents
   hideGrid.value = newHideGrid
+  hideLabels.value = newHideLabels
 }
 
 provideCanvasDimensions(configStage.width, configStage.height)
