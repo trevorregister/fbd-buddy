@@ -18,7 +18,7 @@
       <tbody>
         <tr v-for="vector in localForceVectors" :key="vector.id">
           <td class="align-center">
-            <div v-if="vector.isEditing">
+            <div v-if="editingStates.get(vector.id)">
               <v-text-field
                 v-model="vector.name"
                 placeholder="Enter force name (LaTeX enabled)"
@@ -32,7 +32,7 @@
               v-else 
               class="math-content" 
               @click="startEditingName(vector)"
-              v-html="vector.renderedName"
+              v-html="vector.renderedName || vector.name"
             ></div>
           </td>
           <td class="align-center">
@@ -41,12 +41,13 @@
               placeholder="Enter object exerting force"
               dense
               hide-details
+              @change="updateVector(vector)"
             ></v-text-field>
           </td>
           <td class="align-center">
             <v-text-field
-              v-model="vector.xComponent"
-              @input="updateXComponent(vector, $event)"
+              :value="isPolar ? vector.magnitude : vector.xComponent"
+              @input="isPolar ? updateMagnitude(vector, $event) : updateXComponent(vector, $event)"
               type="number"
               dense
               hide-details
@@ -54,8 +55,8 @@
           </td>
           <td class="align-center">
             <v-text-field
-              v-model="vector.yComponent"
-              @input="updateYComponent(vector, $event)"
+              :value="isPolar ? vector.angle : vector.yComponent"
+              @input="isPolar ? updateAngle(vector, $event) : updateYComponent(vector, $event)"
               type="number"
               dense
               hide-details
@@ -104,11 +105,16 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
+import { useForceVectorsStore } from '~/stores/forceVectors'
 
 const props = defineProps({
-  forceVectors: Array,
-  objectExperiencingForce: String,
+  objectExperiencingForce: {
+    type: String,
+    default: ''
+  }
 })
+
+const forceVectorsStore = useForceVectorsStore()
 
 const emit = defineEmits(['addVector', 'deleteVector', 'updateVector', 'highlightVector', 'unhighlightVector'])
 
@@ -120,7 +126,7 @@ const editingStates = ref(new Map())
 
 // Create a reactive copy of forceVectors
 const localForceVectors = computed(() => 
-  props.forceVectors.map(vector => ({
+  forceVectorsStore.vectors.map(vector => ({
     ...vector,
     isEditing: editingStates.value.has(vector.id),
     renderedName: vector.renderedName || vector.name,
@@ -138,7 +144,7 @@ const roundToTwoDecimals = (value) => {
 const addNewVector = () => {
   const id = Date.now().toString()
   editingStates.value.set(id, true)
-  emit('addVector', {
+  const newVector = {
     id,
     type: '',
     name: '',
@@ -152,16 +158,20 @@ const addNewVector = () => {
     angle: 0,
     xComponent: 100,
     yComponent: 0
-  })
+  }
+  // Add directly to store instead of emitting
+  forceVectorsStore.addVector(newVector)
 }
 
 const deleteVector = (id) => {
   editingStates.value.delete(id)
-  emit('deleteVector', id)
+  // Delete directly from store instead of emitting
+  forceVectorsStore.deleteVector(id)
 }
 
 const updateVector = (vector) => {
-  emit('updateVector', vector)
+  // Update directly in store instead of emitting
+  forceVectorsStore.updateVector(vector)
 }
 
 const highlightVector = (id) => {
@@ -235,7 +245,7 @@ const openSettingsModal = () => {
 // Update vectors when objectExperiencingForce changes
 watch(() => props.objectExperiencingForce, (newValue) => {
   if (newValue) {
-    props.forceVectors.forEach(vector => {
+    forceVectorsStore.vectors.forEach(vector => {
       if (!vector.objectExperiencingForce) {
         vector.objectExperiencingForce = newValue
       }
@@ -307,21 +317,24 @@ const startEditingName = (vector) => {
 
 const finishEditingName = async (vector) => {
   editingStates.value.delete(vector.id)
-  vector.renderedName = renderKatex(vector)
-  emit('updateVector', {
+  const renderedName = renderKatex(vector)
+  const updatedVector = {
     ...vector,
-    renderedName: vector.renderedName
-  })
+    renderedName: renderedName
+  }
+  // Update the vector in the store
+  forceVectorsStore.updateVector(updatedVector)
 }
 
+// Watch for changes to vector names
 watch(() => localForceVectors.value.map(v => v.name), (newNames, oldNames) => {
   localForceVectors.value.forEach((vector, index) => {
     if (newNames[index] !== oldNames?.[index]) {
-      vector.renderedName = renderKatex(vector)
-      emit('updateVector', {
+      const updatedVector = {
         ...vector,
-        renderedName: vector.renderedName
-      })
+        renderedName: renderKatex(vector)
+      }
+      forceVectorsStore.updateVector(updatedVector)
     }
   })
 }, { deep: true })

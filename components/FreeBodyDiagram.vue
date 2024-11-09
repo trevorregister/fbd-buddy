@@ -5,7 +5,8 @@
             <div class="label-content">
               <span>Free Body Diagram for:</span>
               <v-text-field
-                v-model="props.objectExperiencingForce"
+                :value="objectExperiencingForce"
+                @input="$emit('update:objectExperiencingForce', $event.target.value)"
                 placeholder="object"
                 dense
                 hide-details
@@ -16,24 +17,28 @@
           </div>
         </div>
         <ClientOnly>
-          <v-stage ref="leftGrid" :config="props.configStage" class="grid-stage">
-            <v-layer ref="layer">
-              <v-image :config="props.backgroundConfig" />
+          <v-stage ref="leftGrid" :config="configStage" class="grid-stage">
+            <v-layer>
+              <v-image :config="backgroundConfig" />
               <Point 
                 :x="0"
                 :y="0"
                 :radius="8"
-                :fill="'black'"/>
+                :fill="'black'"
+              />
               <Grid 
                 :spacing="50" 
-                :hideGrid="props.hideGrid"/>
-              <ForceVector v-for="vector in props.forceVectors" :key="vector.id"
+                :hideGrid="hideGrid"
+              />
+              <ForceVector 
+                v-for="vector in vectors" 
+                :key="vector.id"
                 :tail="vector.tail" 
                 :head="vector.head" 
-                :showComponents="props.showComponents"
+                :showComponents="showComponents"
                 :id="vector.id"
-                :canDrag="!props.isAnimating"
-                :isHighlighted="vector.id === props.highlightedVectorId"
+                :canDrag="!isAnimating"
+                :isHighlighted="vector.id === forceVectorsStore.highlightedVectorId"
                 :label="vector.name"
                 @update:head="(newHead) => updateVectorHead(vector.id, newHead)"
               />  
@@ -44,30 +49,30 @@
     </template>
     
     <script setup>
-    import { defineProps } from 'vue'
+    import { defineProps, watch, ref, computed } from 'vue'
     import Grid from '~/components/Grid.vue'
     import Point from '~/components/Point.vue'
     import ForceVector from '~/components/ForceVector.vue'
+    import { useForceVectorsStore } from '~/stores/forceVectors'
     
     const props = defineProps({
-      forceVectors: Array,
       objectExperiencingForce: String,
       configStage: Object,
       backgroundConfig: Object,
       hideGrid: Boolean,
       showComponents: Boolean,
       isAnimating: Boolean,
-      highlightedVectorId: [String, Number],
     })
     
+    const emit = defineEmits(['updateVectorHead', 'update:objectExperiencingForce'])
+    
+    const forceVectorsStore = useForceVectorsStore()
+    
+    // Create a computed property for the vectors
+    const vectors = computed(() => forceVectorsStore.vectors)
+    
     const updateVectorHead = (id, newHead) => {
-      const index = props.forceVectors.findIndex(v => v.id === id)
-      if (index !== -1) {
-        props.forceVectors[index] = {
-          ...props.forceVectors[index],
-          head: newHead
-        }
-      }
+      emit('updateVectorHead', id, newHead)
     }
     </script>
     

@@ -21,12 +21,12 @@
             :id="vector.id"
             :canDrag="false"
             :label="vector.name"
-            :highlighted="vector.id === highlightedVectorId"
+            :highlighted="vector.id === forceVectorsStore.highlightedVectorId"
             @mouseenter="highlightVector(vector.id)"
             @mouseleave="unhighlightVector"
           />  
           <!-- Net Force Vector -->
-          <v-group v-if="showNetForce && props.forceVectors.length > 0">
+          <v-group v-if="showNetForce && forceVectorsStore.vectors.length > 0">
             <v-arrow :config="netForceConfig" />
             <v-label :config="netForceLabelConfig">
               <v-tag :config="netForceLabelTagConfig" />
@@ -49,8 +49,10 @@
 import { ref, computed, watch } from 'vue'
 import Grid from '~/components/Grid.vue'
 import ForceVector from '~/components/ForceVector.vue'
+import Point from '~/components/Point.vue'
 import { gridToCanvasCoordinates } from '~/utils/coordinates'
 import Konva from 'konva'
+import { useForceVectorsStore } from '~/stores/forceVectors'
 
 const props = defineProps({
   configStage: {
@@ -65,15 +67,13 @@ const props = defineProps({
     type: Boolean,
     required: true
   },
-  forceVectors: {
-    type: Array,
-    required: true
-  },
   isAnimating: {
     type: Boolean,
     default: false
   }
 })
+
+const forceVectorsStore = useForceVectorsStore()
 
 // Initialize showNetForce as true
 const showNetForce = ref(true)
@@ -87,7 +87,7 @@ const cumulativeVectors = computed(() => {
   if (props.isAnimating) return []
   
   let cumulative = { x: 0, y: 0 }
-  return props.forceVectors.map(v => {
+  return forceVectorsStore.vectors.map(v => {
     const dx = v.head.x - v.tail.x
     const dy = v.head.y - v.tail.y
     
@@ -103,8 +103,6 @@ const cumulativeVectors = computed(() => {
       }
     }
     
-    console.log('Vector label:', newVector.name)
-    
     cumulative = {
       x: newVector.head.x + (ARROW_HEAD_LENGTH * Math.cos(angle) / GRID_SCALE),
       y: newVector.head.y + (ARROW_HEAD_LENGTH * Math.sin(angle) / GRID_SCALE)
@@ -115,12 +113,12 @@ const cumulativeVectors = computed(() => {
 })
 
 const netForceConfig = computed(() => {
-  if (props.forceVectors.length === 0) return {}
+  if (forceVectorsStore.vectors.length === 0) return {}
   
   const start = gridToCanvasCoordinates(0, 0)
   let sumX = 0
   let sumY = 0
-  props.forceVectors.forEach(vector => {
+  forceVectorsStore.vectors.forEach(vector => {
     sumX += vector.head.x - vector.tail.x
     sumY += vector.head.y - vector.tail.y
   })
@@ -145,29 +143,29 @@ const netForceConfig = computed(() => {
 
 // Add these computed properties for the net force label
 const netForceLabelConfig = computed(() => {
-    // Check if netForceConfig.value and points exist
-    if (!netForceConfig.value?.points || netForceConfig.value.points.length < 4) {
-        return {
-            x: 0,
-            y: 0,
-            offsetX: -30,
-            offsetY: -20
-        }
-    }
-
-    const startX = netForceConfig.value.points[0]  // Origin x
-    const startY = netForceConfig.value.points[1]  // Origin y
-    const endX = netForceConfig.value.points[2]    // End point x
-    const endY = netForceConfig.value.points[3]    // End point y
-    
-    // Calculate midpoint
-    const midX = (startX + endX) / 2
-    const midY = (startY + endY) / 2
-    
+  // Check if netForceConfig.value and points exist
+  if (!netForceConfig.value?.points || netForceConfig.value.points.length < 4) {
     return {
-        x: midX,
-        y: midY,
+      x: 0,
+      y: 0,
+      offsetX: -30,
+      offsetY: -20
     }
+  }
+
+  const startX = netForceConfig.value.points[0]  // Origin x
+  const startY = netForceConfig.value.points[1]  // Origin y
+  const endX = netForceConfig.value.points[2]    // End point x
+  const endY = netForceConfig.value.points[3]    // End point y
+  
+  // Calculate midpoint
+  const midX = (startX + endX) / 2
+  const midY = (startY + endY) / 2
+  
+  return {
+    x: midX,
+    y: midY,
+  }
 })
 
 const netForceLabelTagConfig = computed(() => ({
@@ -225,6 +223,14 @@ watch(() => props.isAnimating, async (newValue, oldValue) => {
     requestAnimationFrame(animate)
   }
 })
+
+const highlightVector = (id) => {
+  forceVectorsStore.setHighlightedVector(id)
+}
+
+const unhighlightVector = () => {
+  forceVectorsStore.clearHighlightedVector()
+}
 
 // Add emit for animate button click
 defineEmits(['animate'])

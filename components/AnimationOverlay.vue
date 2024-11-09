@@ -23,6 +23,7 @@ import { ref, computed, onMounted } from 'vue'
 import Konva from 'konva'
 import ForceVector from './ForceVector.vue'
 import { gridToCanvasCoordinates } from '~/utils/coordinates'
+import { useForceVectorsStore } from '~/stores/forceVectors'
 
 const props = defineProps({
   configStage: Object,

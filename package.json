@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
+    "@pinia/nuxt": "^0.5.1",
     "@vueuse/core": "^11.1.0",
     "canvas": "^2.11.2",
     "draw2d": "^1.0.38",
@@ -20,6 +21,8 @@
     "katex": "^0.16.11",
     "konva": "^9.3.14",
     "nuxt": "^3.13.0",
+    "pina": "^0.20.2204228",
+    "pinia": "^2.1.7",
     "sass": "^1.78.0",
     "vue": "latest",
     "vue-konva": "^3.1.0",

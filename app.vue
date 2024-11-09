@@ -9,28 +9,49 @@
         <div class="grid-row" style="position: relative;">
           <v-col cols="6">
             <FreeBodyDiagram
-              :objectExperiencingForce="objectExperiencingForce"
+              v-model:objectExperiencingForce="objectExperiencingForce"
               :configStage="configStage"
               :backgroundConfig="backgroundConfig"
-              :forceVectors="forceVectors"
+              :forceVectors="forceVectorsStore.vectors"
               :hideGrid="hideGrid"
               :showComponents="showComponents"
               :isAnimating="isAnimating"
-              :highlightedVectorId="highlightedVectorId"
+              :highlightedVectorId="forceVectorsStore.highlightedVectorId"
               @updateVectorHead="updateVectorHead"
             />
           </v-col>
           <v-col cols="6" class="grid-column">
-            <ForceTable
-              :forceVectors="forceVectors"
-              :objectExperiencingForce="objectExperiencingForce"
-              @addVector="addForceVector"
-              @deleteVector="deleteForceVector"
-              @updateVector="updateForceVector"
-              @highlightVector="highlightVector"
-              @unhighlightVector="unhighlightVector"
-              @clearVectors="handleClearVectors"
-            />
+            <div class="tabs-container">
+              <v-tabs v-model="activeTab">
+                <v-tab value="interaction">Interaction Diagram</v-tab>
+                <v-tab value="forceTable">Force Table</v-tab>
+                <v-tab value="forceAddition">Force Addition Diagram</v-tab>
+              </v-tabs>
+
+              <v-window v-model="activeTab" class="grid-window">
+                <v-window-item value="interaction">
+                  <InteractionDiagram />
+                </v-window-item>
+
+                <v-window-item value="forceTable">
+                  <ForceTable
+                    :objectExperiencingForce="objectExperiencingForce"
+                    @highlightVector="highlightVector"
+                    @unhighlightVector="unhighlightVector"
+                  />
+                </v-window-item>
+
+                <v-window-item value="forceAddition">
+                  <ForceAdditionDiagram
+                    :configStage="configStage"
+                    :hideGrid="hideGrid"
+                    :showComponents="showComponents"
+                    :isAnimating="isAnimating"
+                    @animate="animateVectors"
+                  />
+                </v-window-item>
+              </v-window>
+            </div>
           </v-col>
         </div>
         
@@ -40,7 +61,7 @@
             v-if="isAnimating"
             ref="animationOverlay"
             :configStage="configStage"
-            :forceVectors="forceVectors.map(v => ({ ...v, label: v.name }))"
+            :forceVectors="forceVectorsStore.vectors.map(v => ({ ...v, label: v.name }))"
           />
         </Teleport>
         
@@ -72,6 +93,7 @@ import InteractionDiagram from '~/components/InteractionDiagram.vue'
 import { useAnimate } from '@vueuse/core'
 import AnimationOverlay from '~/components/AnimationOverlay.vue'
 import FreeBodyDiagram from '~/components/FreeBodyDiagram.vue'
+import { useForceVectorsStore } from '~/stores/forceVectors'
 
 const showComponents = ref(false) 
 const hideGrid = ref(false)
@@ -81,27 +103,10 @@ const configStage = {
   height: 500,
 }
 
-const forceVectors = ref([])
-
-const addForceVector = (newVector) => {
-  forceVectors.value.push(newVector)
-  console.log('Added new vector:', newVector)
-  console.log('Current forceVectors:', forceVectors.value)
-}
-
-const deleteForceVector = (id) => {
-  forceVectors.value = forceVectors.value.filter(v => v.id !== id)
-}
-
-const updateForceVector = (updatedVector) => {
-  const index = forceVectors.value.findIndex(v => v.id === updatedVector.id)
-  if (index !== -1) {
-    forceVectors.value[index] = updatedVector
-  }
-}
+const forceVectorsStore = useForceVectorsStore()
 
 const handleClearVectors = () => {
-  forceVectors.value = []
+  forceVectorsStore.clearVectors()
 }
 
 const handleSaveSettings = (settings) => {
@@ -142,18 +147,6 @@ const handleImageUpload = (event) => {
   }
 }
 
-const activeTab = ref('forceAddition')
-
-const highlightedVectorId = ref(null)
-
-const highlightVector = (id) => {
-  highlightedVectorId.value = id
-}
-
-const unhighlightVector = () => {
-  highlightedVectorId.value = null
-}
-
 const objectExperiencingForce = ref('')
 
 const isAnimating = ref(false)
@@ -164,7 +157,7 @@ const animateVectors = async () => {
   console.log('Starting animation sequence')
   
   console.log('Force vectors being passed to overlay:', 
-    forceVectors.value.map(v => ({
+    forceVectorsStore.vectors.map(v => ({
       id: v.id,
       label: v.label,
       tail: v.tail,
@@ -245,15 +238,19 @@ onMounted(() => {
   })
 })
 
-const updateVectorHead = (id, newHead) => {
-  const index = forceVectors.value.findIndex(v => v.id === id)
-  if (index !== -1) {
-    forceVectors.value[index] = {
-      ...forceVectors.value[index],
-      head: newHead
-    }
-  }
+const highlightVector = (id) => {
+  forceVectorsStore.setHighlightedVector(id)
 }
+
+const unhighlightVector = () => {
+  forceVectorsStore.clearHighlightedVector()
+}
+
+const updateVectorHead = (id, newHead) => {
+  forceVectorsStore.updateVectorHead(id, newHead)
+}
+
+const activeTab = ref('interaction')
 </script>
 
 <style scoped>
@@ -287,15 +284,18 @@ body{
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .v-window-item {
   height: 100%;
+  overflow: auto;
 }
 
 .tabs-container {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .free-body-diagram-label {
