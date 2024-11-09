@@ -45,8 +45,8 @@
           </td>
           <td class="align-center">
             <v-text-field
-              :value="roundToTwoDecimals(isPolar ? vector.magnitude : vector.xComponent)"
-              @input="isPolar ? updateMagnitude(vector, $event) : updateXComponent(vector, $event)"
+              v-model="vector.xComponent"
+              @input="updateXComponent(vector, $event)"
               type="number"
               dense
               hide-details
@@ -54,8 +54,8 @@
           </td>
           <td class="align-center">
             <v-text-field
-              :value="roundToTwoDecimals(isPolar ? vector.angle : vector.yComponent)"
-              @input="isPolar ? updateAngle(vector, $event) : updateYComponent(vector, $event)"
+              v-model="vector.yComponent"
+              @input="updateYComponent(vector, $event)"
               type="number"
               dense
               hide-details
@@ -394,7 +394,7 @@ td {
 
 /* Make regular force names bigger */
 .math-content :deep(.katex) {
-    font-size: 1.5em !important;  /* Increase from 1em to 1.3em */
+    font-size: 1.3em !important;  /* Increase from 1em to 1.3em */
 }
 
 /* Keep net force even bigger or adjust if needed */

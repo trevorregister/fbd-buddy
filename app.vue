@@ -7,85 +7,30 @@
           <SettingsModal @save-settings="handleSaveSettings"/>
         </v-row>
         <div class="grid-row" style="position: relative;">
-          <v-col cols="6" class="grid-column">
-            <div class="grid-header">
-              <div class="free-body-diagram-label">
-                <div class="label-content">
-                  <span>Free Body Diagram for:</span>
-                  <v-text-field
-                    v-model="objectExperiencingForce"
-                    placeholder="object"
-                    dense
-                    hide-details
-                    class="ml-2"
-                    style="max-width: 200px;"
-                  ></v-text-field>
-                </div>
-              </div>
-            </div>
-            <ClientOnly>
-              <v-stage ref="leftGrid" :config="configStage" class="grid-stage">
-                <v-layer ref="layer">
-                  <v-image :config="backgroundConfig" />
-                  <Point 
-                    :x="0"
-                    :y="0"
-                    :radius="8"
-                    :fill="'black'"/>
-                  <Grid 
-                    :spacing="50" 
-                    :hideGrid="hideGrid"/>
-                  <ForceVector v-for="vector in forceVectors" :key="vector.id"
-                    :tail="vector.tail" 
-                    :head="vector.head" 
-                    :showComponents="showComponents"
-                    :id="vector.id"
-                    :canDrag="!isAnimating"
-                    :isHighlighted="vector.id === highlightedVectorId"
-                    :label="vector.name"
-                    @update:head="(newHead) => updateVectorHead(vector.id, newHead)"
-                  />  
-                </v-layer>
-              </v-stage>
-            </ClientOnly>
+          <v-col cols="6">
+            <FreeBodyDiagram
+              :objectExperiencingForce="objectExperiencingForce"
+              :configStage="configStage"
+              :backgroundConfig="backgroundConfig"
+              :forceVectors="forceVectors"
+              :hideGrid="hideGrid"
+              :showComponents="showComponents"
+              :isAnimating="isAnimating"
+              :highlightedVectorId="highlightedVectorId"
+              @updateVectorHead="updateVectorHead"
+            />
           </v-col>
           <v-col cols="6" class="grid-column">
-            <div class="grid-header">
-              <v-tabs v-model="activeTab">
-                <v-tab value="interaction">Interaction Diagram</v-tab>
-                <v-tab value="forces">Forces</v-tab>
-                <v-tab value="forceAddition">Force Addition Diagram</v-tab>
-              </v-tabs>
-            </div>
-            <v-window v-model="activeTab" class="grid-window">
-              <v-window-item value="forceAddition">
-                <ForceAdditionDiagram 
-                  :configStage="configStage"
-                  :hideGrid="hideGrid"
-                  :showComponents="showComponents"
-                  :forceVectors="forceVectors"
-                  :isAnimating="isAnimating"
-                  @animate="animateVectors"
-                />
-              </v-window-item>
-              <v-window-item value="forces">
-                <ForceTable 
-                  :forceVectors="forceVectors"
-                  :objectExperiencingForce="objectExperiencingForce"
-                  @addVector="addForceVector"
-                  @deleteVector="deleteForceVector"
-                  @updateVector="updateForceVector"
-                  @highlightVector="highlightVector"
-                  @unhighlightVector="unhighlightVector"
-                  @clearVectors="handleClearVectors"
-                />
-              </v-window-item>
-              <v-window-item value="interaction">
-                <ClientOnly>
-                  <InteractionDiagram />
-                </ClientOnly>
-              </v-window-item>
-            </v-window>
+            <ForceTable
+              :forceVectors="forceVectors"
+              :objectExperiencingForce="objectExperiencingForce"
+              @addVector="addForceVector"
+              @deleteVector="deleteForceVector"
+              @updateVector="updateForceVector"
+              @highlightVector="highlightVector"
+              @unhighlightVector="unhighlightVector"
+              @clearVectors="handleClearVectors"
+            />
           </v-col>
         </div>
         
@@ -118,9 +63,6 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
-import Grid from '~/components/Grid.vue'
-import Point from '~/components/Point.vue'
-import ForceVector from '~/components/ForceVector.vue'
 import MenuBar from '~/components/MenuBar.vue'
 import ForceAdditionDiagram from '~/components/ForceAdditionDiagram.vue'
 import ForceTable from '~/components/ForceTable.vue'
@@ -128,8 +70,8 @@ import { provideCanvasDimensions } from '~/composables/useCanvasDimensions'
 import SettingsModal from '~/components/SettingsModal.vue'
 import InteractionDiagram from '~/components/InteractionDiagram.vue'
 import { useAnimate } from '@vueuse/core'
-import Konva from 'konva'
 import AnimationOverlay from '~/components/AnimationOverlay.vue'
+import FreeBodyDiagram from '~/components/FreeBodyDiagram.vue'
 
 const showComponents = ref(false) 
 const hideGrid = ref(false)
