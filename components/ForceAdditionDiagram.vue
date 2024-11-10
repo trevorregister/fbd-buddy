@@ -26,15 +26,24 @@
             @mouseenter="highlightVector(vector.id)"
             @mouseleave="unhighlightVector"
           />  
-          <!-- Net Force Vector -->
-          <v-group v-if="showNetForce && forceVectorsStore.vectors.length > 0">
-            <v-arrow :config="netForceConfig" />
-            <v-label v-if="!hideLabels" :config="netForceLabelConfig">
-              <v-tag :config="netForceLabelTagConfig" />
-              <v-text :config="netForceMainTextConfig" />
-              <v-text :config="netForceSubscriptConfig" />
-            </v-label>
-          </v-group>
+          <!-- Net Force Vector (arrow line first) -->
+          <v-line 
+            v-if="showNetForce && forceVectorsStore.vectors.length > 0"
+            :config="netForceLineConfig"
+          />
+          <!-- Net Force Label -->
+          <v-label v-if="showNetForce && !hideLabels && forceVectorsStore.vectors.length > 0" 
+            :config="netForceLabelConfig"
+          >
+            <v-tag :config="netForceLabelTagConfig" />
+            <v-text :config="netForceMainTextConfig" />
+            <v-text :config="netForceSubscriptConfig" />
+          </v-label>
+          <!-- Net Force Arrow Head (on top of everything) -->
+          <v-regular-polygon 
+            v-if="showNetForce && forceVectorsStore.vectors.length > 0"
+            :config="netForceArrowConfig"
+          />
         </v-layer>
       </v-stage>
     </ClientOnly>
@@ -117,7 +126,8 @@ const cumulativeVectors = computed(() => {
   })
 })
 
-const netForceConfig = computed(() => {
+// Split the net force config into line and arrow configs
+const netForceLineConfig = computed(() => {
   if (forceVectorsStore.vectors.length === 0) return {}
   
   const start = gridToCanvasCoordinates(0, 0)
@@ -129,7 +139,6 @@ const netForceConfig = computed(() => {
   })
   const end = gridToCanvasCoordinates(sumX, sumY)
   
-  // Calculate current end point based on animation progress
   const currentEnd = {
     x: start.x + (end.x - start.x) * netForceProgress.value,
     y: start.y + (end.y - start.y) * netForceProgress.value
@@ -137,39 +146,65 @@ const netForceConfig = computed(() => {
   
   return {
     points: [start.x, start.y, currentEnd.x, currentEnd.y],
-    pointerLength: 10,
-    pointerWidth: 10,
-    fill: 'red',
     stroke: 'red',
     strokeWidth: 8,
     dash: [10, 5],
   }
 })
 
-// Add these computed properties for the net force label
+const netForceArrowConfig = computed(() => {
+  if (forceVectorsStore.vectors.length === 0) return {}
+  
+  const start = gridToCanvasCoordinates(0, 0)
+  let sumX = 0
+  let sumY = 0
+  forceVectorsStore.vectors.forEach(vector => {
+    sumX += vector.head.x - vector.tail.x
+    sumY += vector.head.y - vector.tail.y
+  })
+  const end = gridToCanvasCoordinates(sumX, sumY)
+  
+  const currentEnd = {
+    x: start.x + (end.x - start.x) * netForceProgress.value,
+    y: start.y + (end.y - start.y) * netForceProgress.value
+  }
+
+  // Calculate angle for arrow direction
+  const dx = currentEnd.x - start.x
+  const dy = currentEnd.y - start.y
+  const angle = Math.atan2(dy, dx)
+  
+  return {
+    x: currentEnd.x,
+    y: currentEnd.y,
+    sides: 3,
+    radius: 14,
+    fill: 'red',
+    rotation: angle * 180 / Math.PI + 90
+  }
+})
+
+// Fix the netForceLabelConfig to use netForceLineConfig instead
 const netForceLabelConfig = computed(() => {
-  // Check if netForceConfig.value and points exist
-  if (!netForceConfig.value?.points || netForceConfig.value.points.length < 4) {
+  if (!netForceLineConfig.value?.points || netForceLineConfig.value.points.length < 4) {
     return {
       x: 0,
-      y: 0,
-      offsetX: -30,
-      offsetY: -20
+      y: 0
     }
   }
 
-  const startX = netForceConfig.value.points[0]  // Origin x
-  const startY = netForceConfig.value.points[1]  // Origin y
-  const endX = netForceConfig.value.points[2]    // End point x
-  const endY = netForceConfig.value.points[3]    // End point y
+  const startX = netForceLineConfig.value.points[0]
+  const startY = netForceLineConfig.value.points[1]
+  const endX = netForceLineConfig.value.points[2]
+  const endY = netForceLineConfig.value.points[3]
   
-  // Calculate midpoint
+  // Calculate exact midpoint
   const midX = (startX + endX) / 2
   const midY = (startY + endY) / 2
   
   return {
     x: midX,
-    y: midY,
+    y: midY
   }
 })
 
