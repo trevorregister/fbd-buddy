@@ -14,6 +14,8 @@
             :hideLabels="hideLabels"
             :forceVectors="forceVectorsStore.vectors.map(v => ({ ...v, label: v.name }))"
             :isPaused="isPaused"
+            :use-shuffled-order="useShuffledOrder"
+            :vector-order="currentVectorOrder"
             class="animation-overlay"
           />
           <div class="left-column">
@@ -170,9 +172,13 @@ const togglePause = () => {
   }
 }
 
-const animateVectors = async () => {
+const currentVectorOrder = ref([])
+
+const animateVectors = async (event) => {
   if (isAnimating.value) return
-  console.log('Starting animation sequence')
+  console.log('Starting animation sequence with vectors:', event?.vectorOrder?.map(v => v.name))
+  
+  currentVectorOrder.value = event?.vectorOrder || []
   
   isAnimating.value = true
   isPaused.value = false
@@ -191,6 +197,7 @@ const animateVectors = async () => {
   } finally {
     isAnimating.value = false
     isPaused.value = false
+    currentVectorOrder.value = []
     console.log('Animation sequence complete')
   }
 }

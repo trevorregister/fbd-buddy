@@ -49,11 +49,29 @@
       </v-stage>
     </ClientOnly>
     <div class="button-container">
-      <v-btn @click="handleAnimationControl">
+      <v-btn
+        @click="handleAnimationControl"
+        class="mr-2"
+      >
         {{ buttonText }}
+      </v-btn>
+      <v-btn
+        @click="handleRandomizedAnimation"
+        :disabled="props.isAnimating"
+        variant="outlined"
+      >
+        Randomize Order
       </v-btn>
     </div>
   </div>
+  <AnimationOverlay
+    ref="animationOverlayRef"
+    :config-stage="configStage"
+    :force-vectors="forceVectorsStore.vectors"
+    :hide-labels="hideLabels"
+    :is-paused="isPaused"
+    :vector-order="currentVectorOrder"
+  />
 </template>
 
 <script setup>
@@ -105,12 +123,30 @@ const netForceProgress = ref(1) // Set to 1 to show full vector by default
 const ARROW_HEAD_LENGTH = 120
 const GRID_SCALE = 15
 
-// Hide vectors during animation
+// Add ref to store the current vector order
+const currentVectorOrder = ref([])
+
+// Add shuffle array utility
+const shuffleArray = (array) => {
+  const newArray = [...array]
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]]
+  }
+  return newArray
+}
+
+// Update the cumulativeVectors computed property
 const cumulativeVectors = computed(() => {
+  // Hide vectors during animation
   if (props.isAnimating) return []
   
+  const vectorsToUse = currentVectorOrder.value.length > 0 
+    ? currentVectorOrder.value 
+    : forceVectorsStore.vectors
+
   let cumulative = { x: 0, y: 0 }
-  return forceVectorsStore.vectors.map(v => {
+  return vectorsToUse.map(v => {
     const dx = v.head.x - v.tail.x
     const dy = v.head.y - v.tail.y
     
@@ -249,20 +285,38 @@ const netForceSubscriptConfig = computed(() => ({
 // Update button text based on animation state
 const buttonText = computed(() => {
   if (!props.isAnimating) return 'Animate Vectors'
-  return props.isPaused ? 'Resume Animation' : 'Pause'
+  return props.isPaused ? 'Resume' : 'Pause'
 })
 
 // Handle animation control
 const handleAnimationControl = () => {
   if (!props.isAnimating) {
-    emit('animate')
+    // Get the current order of vectors from cumulativeVectors
+    const currentOrder = cumulativeVectors.value.map(v => {
+      const originalVector = forceVectorsStore.vectors.find(orig => 
+        orig.name === v.name.replace('cumulative-', '')
+      )
+      return originalVector
+    }).filter(v => v)
+    
+    console.log('Current vector order:', currentOrder.map(v => v.name))
+    
+    emit('animate', { 
+      vectorOrder: currentOrder
+    })
   } else {
+    // When animation is running, toggle pause
     emit('togglePause')
   }
 }
 
-// Update emits
-const emit = defineEmits(['animate', 'togglePause'])
+const handleRandomizedAnimation = () => {
+  currentVectorOrder.value = shuffleArray([...forceVectorsStore.vectors])
+  console.log('Shuffled order:', currentVectorOrder.value.map(v => v.name))
+}
+
+// Make sure we're properly emitting the events
+const emit = defineEmits(['animate', 'togglePause', 'animationComplete'])
 
 // Watch for animation end and trigger net force animation
 watch(() => props.isAnimating, async (newValue, oldValue) => {
@@ -291,6 +345,11 @@ watch(() => props.isAnimating, async (newValue, oldValue) => {
   }
 })
 
+// Reset the order when vectors change
+watch(() => forceVectorsStore.vectors, () => {
+  currentVectorOrder.value = []
+}, { deep: true })
+
 const highlightVector = (id) => {
   forceVectorsStore.setHighlightedVector(id)
 }
@@ -298,6 +357,8 @@ const highlightVector = (id) => {
 const unhighlightVector = () => {
   forceVectorsStore.clearHighlightedVector()
 }
+
+const useShuffledOrder = ref(false)
 </script>
 
 <style scoped>
@@ -316,5 +377,10 @@ const unhighlightVector = () => {
   margin-top: 16px;
   display: flex;
   justify-content: center;
+  gap: 8px;
+}
+
+.mr-2 {
+  margin-right: 8px;
 }
 </style>

@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import Konva from 'konva'
 import ForceVector from './ForceVector.vue'
 import { useForceVectorsStore } from '~/stores/forceVectors'
@@ -38,6 +38,10 @@ const props = defineProps({
   isPaused: {
     type: Boolean,
     default: false
+  },
+  vectorOrder: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -53,6 +57,14 @@ const overlayConfig = computed(() => ({
 const ARROW_HEAD_LENGTH = 120
 const GRID_SCALE = 15
 
+// Add local ref for pause state
+const localIsPaused = ref(false)
+
+// Watch for changes in props.isPaused
+watch(() => props.isPaused, (newValue) => {
+  localIsPaused.value = newValue
+})
+
 const animateVectors = async () => {
   console.log('Starting vector animation')
   animatingVectors.value = []
@@ -65,7 +77,14 @@ const animateVectors = async () => {
     y: 0 
   }
 
-  for (const vector of props.forceVectors) {
+  // Use the provided vector order if available, otherwise use default order
+  let vectorsToAnimate = props.vectorOrder.length > 0 
+    ? props.vectorOrder
+    : props.forceVectors
+
+  console.log('Animation order:', vectorsToAnimate.map(v => v.name))
+
+  for (const vector of vectorsToAnimate) {
     // Calculate vector components
     const dx = vector.head.x - vector.tail.x
     const dy = vector.head.y - vector.tail.y
@@ -106,7 +125,7 @@ const animateVectors = async () => {
       let lastPauseTime = null
 
       const animate = () => {
-        if (props.isPaused) {
+        if (localIsPaused.value) {
           if (!lastPauseTime) {
             lastPauseTime = Date.now()
           }
@@ -157,7 +176,7 @@ const animateVectors = async () => {
       y: endVector.head.y + (ARROW_HEAD_LENGTH * Math.sin(angle) / GRID_SCALE)
     }
 
-    if (!props.isPaused) {
+    if (!localIsPaused.value) {
       await new Promise(resolve => setTimeout(resolve, 200))
     }
   }
@@ -167,7 +186,13 @@ const animateVectors = async () => {
   console.log('Animation complete')
 }
 
-defineExpose({ animateVectors })
+// Update the togglePause method
+const togglePause = (isPaused) => {
+  localIsPaused.value = isPaused
+}
+
+// Make sure to expose the togglePause method
+defineExpose({ animateVectors, togglePause })
 </script>
 
 <style scoped>
