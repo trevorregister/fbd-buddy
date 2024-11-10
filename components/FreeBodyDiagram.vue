@@ -32,7 +32,7 @@
               :hideGrid="hideGrid"
             />
             <ForceVector 
-              v-for="vector in vectors" 
+              v-for="vector in forceVectorsStore.vectors" 
               :key="vector.id"
               :tail="vector.tail" 
               :head="vector.head" 
@@ -44,7 +44,10 @@
               :offset="vectorOffsets.get(vector.id) || { x: 0, y: 0 }"
               :hideLabels="hideLabels"
               :coordinateSystem="coordinateSystem"
+              :isDragging="draggedVectorId === vector.id"
               @update:head="(newHead) => updateVectorHead(vector.id, newHead)"
+              @drag-start="draggedVectorId = vector.id"
+              @drag-end="draggedVectorId = null"
             />  
           </v-layer>
         </v-stage>
@@ -146,6 +149,9 @@ const vectorOffsets = computed(() => {
 const updateVectorHead = (id, newHead) => {
   emit('updateVectorHead', id, newHead)
 }
+
+// Add draggedVectorId ref
+const draggedVectorId = ref(null)
 </script>
 
 <style scoped>

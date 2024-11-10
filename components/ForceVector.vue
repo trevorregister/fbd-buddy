@@ -2,18 +2,18 @@
     <v-group :config="groupConfig">
         <v-line :config="lineConfig" />
         <v-regular-polygon :config="arrowHeadConfig" />
-        <v-circle :config="dragHandleConfig" @dragmove="handleArrowHeadDragMove" />
+        <v-circle :config="dragHandleConfig" @dragmove="handleArrowHeadDragMove" @dragstart="handleDragStart" @dragend="handleDragEnd" />
         
-        <!-- Component lines (always visible when showComponents is true) -->
-        <template v-if="showComponents">
+        <!-- Component lines (visible when showComponents is true OR vector is being dragged) -->
+        <template v-if="showComponents || isDragging">
             <template v-if="coordinateSystem === 'cartesian'">
                 <v-line :config="xComponentConfig" />
                 <v-line :config="yComponentConfig" />
             </template>
         </template>
 
-        <!-- Component measurements (only visible on hover) -->
-        <template v-if="showComponents && isHighlighted">
+        <!-- Component measurements (visible when showComponents is true OR vector is being dragged) -->
+        <template v-if="(showComponents && isHighlighted) || isDragging">
             <template v-if="coordinateSystem === 'cartesian'">
                 <v-text :config="xMeasurementConfig" />
                 <v-text :config="yMeasurementConfig" />
@@ -90,10 +90,14 @@ const props = defineProps({
     coordinateSystem: {
         type: String,
         default: 'cartesian'
+    },
+    isDragging: {
+        type: Boolean,
+        default: false
     }
 })
 
-const emit = defineEmits(['update:head'])
+const emit = defineEmits(['update:head', 'dragStart', 'dragEnd'])
 
 const groupConfig = computed(() => {
     const { x, y } = gridToCanvasCoordinates(
@@ -400,6 +404,14 @@ const handleArrowHeadDragMove = (e) => {
         x: cursorX,
         y: cursorY
     })
+}
+
+const handleDragStart = () => {
+    emit('dragStart')
+}
+
+const handleDragEnd = () => {
+    emit('dragEnd')
 }
 
 const renderKatex = (text) => {
