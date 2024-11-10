@@ -87,7 +87,7 @@ const lineConfig = computed(() => {
     )
     return {
         points: [0, 0, x2 - x1, y2 - y1],
-        stroke: props.isHighlighted ? 'red' : 'black',
+        stroke: props.isHighlighted ? 'green' : 'black',
         strokeWidth: 2
     }
 })
@@ -109,7 +109,7 @@ const arrowHeadConfig = computed(() => {
         y: dy,
         sides: 3,
         radius: props.offset.isParallel ? 6 : 10,
-        fill: props.isHighlighted ? 'red' : 'black',
+        fill: props.isHighlighted ? 'green' : 'black',
         rotation: angle * 180 / Math.PI + 90
     }
 })
@@ -191,7 +191,7 @@ const mainTextConfig = computed(() => ({
     text: parsedLabel.value.main,
     fontSize: 20,
     fontFamily: 'KaTeX_Math, Arial',
-    fill: props.isHighlighted ? 'red' : 'black',
+    fill: props.isHighlighted ? 'green' : 'black',
     padding: 5,
     align: 'center'
 }))
@@ -200,7 +200,7 @@ const subscriptConfig = computed(() => ({
     text: parsedLabel.value.subscript,
     fontSize: 16,
     fontFamily: 'KaTeX_Math, Arial',
-    fill: props.isHighlighted ? 'red' : 'black',
+    fill: props.isHighlighted ? 'green' : 'black',
     padding: 5,
     align: 'center',
     x: 12,

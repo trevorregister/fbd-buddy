@@ -45,5 +45,17 @@ export const useForceVectorsStore = defineStore('forceVectors', {
             clearHighlightedVector() {
                   this.highlightedVectorId = null
             },
+            updateObjectExertingForce(id, newValue) {
+                  const vector = this.vectors.find(v => v.id === id)
+                  if (vector) {
+                        vector.objectExertingForce = newValue
+                  }
+            },
+            updateVectorName(id, newName) {
+                  const vector = this.vectors.find(v => v.id === id)
+                  if (vector) {
+                        vector.name = newName
+                  }
+            },
       },
 });

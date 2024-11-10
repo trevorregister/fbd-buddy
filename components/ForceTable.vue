@@ -1,433 +1,305 @@
 <template>
-  <div class="force-table-container">
+  <div class="force-table">
     <v-table>
       <thead>
         <tr>
-          <th>Force Name</th>
+          <th>Force Label</th>
           <th>Object Exerting Force</th>
-          <th>{{ isPolar ? 'Magnitude' : 'X Component' }}</th>
-          <th>{{ isPolar ? 'Angle' : 'Y Component' }}</th>
+          <th>Components</th>
           <th>Actions</th>
-          <th>
-            <v-btn icon @click="openSettingsModal">
-              <v-icon>mdi-cog</v-icon>
-            </v-btn>
-          </th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="vector in localForceVectors" :key="vector.id">
-          <td class="align-center">
-            <div v-if="editingStates.get(vector.id)">
-              <v-text-field
-                v-model="vector.name"
-                placeholder="Enter force name (LaTeX enabled)"
-                dense
-                hide-details
-                @blur="finishEditingName(vector)"
-                @keyup.enter="finishEditingName(vector)"
-              ></v-text-field>
-            </div>
+        <tr v-for="vector in forceVectorsStore.vectors" :key="vector.id"
+          @mouseenter="$emit('highlightVector', vector.id)"
+          @mouseleave="$emit('unhighlightVector')"
+          :class="{ 'highlighted-row': vector.id === forceVectorsStore.highlightedVectorId }"
+        >
+          <td>
+            <v-text-field
+              v-if="editingLabel === vector.id"
+              v-model="tempLabel"
+              :hide-details="true"
+              density="compact"
+              variant="outlined"
+              @blur="finishEditingLabel(vector.id)"
+              @keyup.enter="finishEditingLabel(vector.id)"
+              ref="labelInput"
+            />
             <div 
               v-else 
-              class="math-content" 
-              @click="startEditingName(vector)"
-              v-html="vector.renderedName || vector.name"
+              @click="startEditingLabel(vector)"
+              class="math-container"
+              v-html="renderKatex(vector.name)"
             ></div>
           </td>
-          <td class="align-center">
-            <v-text-field
-              v-model="vector.objectExerting"
-              placeholder="Enter object exerting force"
-              dense
-              hide-details
-              @change="updateVector(vector)"
-            ></v-text-field>
+          <td>
+            <v-combobox
+              v-model="vector.objectExertingForce"
+              :items="interactionDiagramStore.objects.map(obj => obj.label)"
+              :hide-details="true"
+              density="compact"
+              variant="outlined"
+              @update:model-value="updateObjectExertingForce(vector.id, $event)"
+            />
           </td>
-          <td class="align-center">
-            <v-text-field
-              :model-value="isPolar ? vector.magnitude : vector.xComponent"
-              @update:model-value="isPolar ? updateMagnitude(vector, $event) : updateXComponent(vector, $event)"
-              type="number"
-              dense
-              hide-details
-              @focus="$event.target.select()"
-              step="any"
-            ></v-text-field>
+          <td>
+            <div class="components">
+              <div class="component-input">
+                x: <v-text-field
+                  v-model="vectorComponents[vector.id].x"
+                  :hide-details="true"
+                  density="compact"
+                  variant="outlined"
+                  type="number"
+                  class="component-field"
+                  @update:model-value="updateVectorComponent(vector, 'x', $event)"
+                />
+              </div>
+              <div class="component-input">
+                y: <v-text-field
+                  v-model="vectorComponents[vector.id].y"
+                  :hide-details="true"
+                  density="compact"
+                  variant="outlined"
+                  type="number"
+                  class="component-field"
+                  @update:model-value="updateVectorComponent(vector, 'y', $event)"
+                />
+              </div>
+            </div>
           </td>
-          <td class="align-center">
-            <v-text-field
-              :model-value="isPolar ? vector.angle : vector.yComponent"
-              @update:model-value="isPolar ? updateAngle(vector, $event) : updateYComponent(vector, $event)"
-              type="number"
-              dense
-              hide-details
-              @focus="$event.target.select()"
-              step="any"
-            ></v-text-field>
-          </td>
-          <td class="align-center">
-            <v-btn @click="deleteVector(vector.id)" size="small">Delete</v-btn>
+          <td>
+            <v-btn
+              icon="mdi-delete"
+              variant="text"
+              color="black"
+              density="compact"
+              @click="forceVectorsStore.deleteVector(vector.id)"
+            />
           </td>
         </tr>
+        <!-- Net Force Row -->
         <tr class="net-force-row">
-          <td>
-            <div class="math-content net-force-label" v-html="renderKatex({ name: 'F_net' })"></div>
+          <td style="color: red;">
+            <div class="math-container" v-html="renderKatex('F_{net}')"></div>
           </td>
-          <td></td>
-          <td>{{ isPolar ? netForceMagnitude : netForceX }}</td>
-          <td>{{ isPolar ? netForceAngle : netForceY }}</td>
-          <td></td>
+          <td>{{ objectExperiencingForce }}</td>
+          <td>
+            <div class="components">
+              <div>x: {{ formatComponent(getNetXComponent()) }}</div>
+              <div>y: {{ formatComponent(getNetYComponent()) }}</div>
+            </div>
+          </td>
           <td></td>
         </tr>
       </tbody>
     </v-table>
-    
-    <div class="controls-container">
-      <v-btn @click="addNewVector" color="primary">Add New Force</v-btn>
-    </div>
 
-    <v-dialog v-model="settingsModalOpen" max-width="400px">
-      <v-card>
-        <v-card-title>Settings</v-card-title>
-        <v-card-text>
-          <v-switch
-            v-model="isPolar"
-            :label="isPolar ? 'Polar Coordinates' : 'Cartesian Coordinates'"
-          ></v-switch>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="settingsModalOpen = false">Close</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <!-- Add Force Button -->
+    <div class="button-container">
+      <v-btn
+        color="primary"
+        @click="addForce"
+        class="mt-4"
+      >
+        Add Force
+      </v-btn>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useForceVectorsStore } from '~/stores/forceVectors'
+import { useInteractionDiagramStore } from '~/stores/interactionDiagram'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
-import { useForceVectorsStore } from '~/stores/forceVectors'
 
 const props = defineProps({
   objectExperiencingForce: {
     type: String,
-    default: ''
+    required: true
   }
 })
 
 const forceVectorsStore = useForceVectorsStore()
+const interactionDiagramStore = useInteractionDiagramStore()
 
-const emit = defineEmits(['addVector', 'deleteVector', 'updateVector', 'highlightVector', 'unhighlightVector'])
+// Track component values
+const vectorComponents = ref({})
 
-const isPolar = ref(false)
-const settingsModalOpen = ref(false)
-
-// Add this after other ref declarations
-const editingStates = ref(new Map())
-
-// Create a reactive copy of forceVectors
-const localForceVectors = computed(() => 
-  forceVectorsStore.vectors.map(vector => ({
-    ...vector,
-    isEditing: editingStates.value.has(vector.id),
-    renderedName: vector.renderedName || vector.name,
-    magnitude: calculateMagnitude(vector),
-    angle: calculateAngle(vector),
-    xComponent: vector.head.x - vector.tail.x,
-    yComponent: vector.head.y - vector.tail.y
-  }))
-)
-
-const roundToTwoDecimals = (value) => {
-  return Number(value).toFixed(2);
+const getXComponent = (vector) => {
+  return vector.head.x - vector.tail.x
 }
 
-const addNewVector = () => {
-  const id = Date.now().toString()
-  editingStates.value.set(id, true)
-  const newVector = {
-    id,
-    type: '',
-    name: '',
-    label: '',
-    renderedName: '',
-    objectExerting: '',
-    objectExperiencing: '',
-    tail: { x: 0, y: 0 },
-    head: { x: 100, y: 100 },
-    magnitude: 100,
-    angle: 0,
-    xComponent: 100,
-    yComponent: 0
+const getYComponent = (vector) => {
+  return vector.head.y - vector.tail.y
+}
+
+// Initialize component values for each vector
+const initializeVectorComponents = () => {
+  const components = {}
+  forceVectorsStore.vectors.forEach(vector => {
+    components[vector.id] = {
+      x: getXComponent(vector),
+      y: getYComponent(vector)
+    }
+  })
+  vectorComponents.value = components
+}
+
+// Watch for changes in vectors
+watch(() => forceVectorsStore.vectors, () => {
+  initializeVectorComponents()
+}, { deep: true, immediate: true })
+
+const updateObjectExertingForce = (vectorId, newValue) => {
+  forceVectorsStore.updateObjectExertingForce(vectorId, newValue)
+}
+
+const updateVectorComponent = (vector, component, value) => {
+  const numValue = parseFloat(value)
+  if (isNaN(numValue)) return
+
+  const newHead = { ...vector.head }
+  if (component === 'x') {
+    newHead.x = vector.tail.x + numValue
+  } else {
+    newHead.y = vector.tail.y + numValue
   }
-  // Add directly to store instead of emitting
+  
+  forceVectorsStore.updateVectorHead(vector.id, newHead)
+}
+
+const getNetXComponent = () => {
+  return forceVectorsStore.vectors.reduce((sum, vector) => 
+    sum + (vector.head.x - vector.tail.x), 0
+  )
+}
+
+const getNetYComponent = () => {
+  return forceVectorsStore.vectors.reduce((sum, vector) => 
+    sum + (vector.head.y - vector.tail.y), 0
+  )
+}
+
+const formatComponent = (value) => {
+  return value.toFixed(2)
+}
+
+const addForce = () => {
+  const newVector = {
+    id: Date.now(),
+    name: `F_${forceVectorsStore.vectors.length + 1}`,
+    objectExertingForce: '',
+    type: 'Force',
+    tail: { x: 0, y: 0 },
+    head: { x: 200, y: 200 }
+  }
   forceVectorsStore.addVector(newVector)
 }
 
-const deleteVector = (id) => {
-  editingStates.value.delete(id)
-  // Delete directly from store instead of emitting
-  forceVectorsStore.deleteVector(id)
-}
+const editingLabel = ref(null)
+const tempLabel = ref('')
+const labelInput = ref(null)
 
-const updateVector = (vector) => {
-  // Update directly in store instead of emitting
-  forceVectorsStore.updateVector(vector)
-}
-
-const highlightVector = (id) => {
-  emit('highlightVector', id)
-}
-
-const unhighlightVector = () => {
-  emit('unhighlightVector')
-}
-
-const clearVectors = () => {
-  emit('clearVectors')
-}
-
-function calculateMagnitude(vector) {
-  const dx = vector.head.x - vector.tail.x
-  const dy = vector.head.y - vector.tail.y
-  return Math.sqrt(dx * dx + dy * dy)
-}
-
-function calculateAngle(vector) {
-  const dx = vector.head.x - vector.tail.x
-  const dy = vector.head.y - vector.tail.y
-  let angle = Math.atan2(dy, dx) * (180 / Math.PI)
-  if (angle < 0) {
-    angle += 360
-  }
-  return angle
-}
-
-const updateXComponent = (vector, value) => {
-  const numValue = Number(value)
-  if (!isNaN(numValue)) {
-    vector.xComponent = numValue
-    vector.head.x = vector.tail.x + numValue
-    vector.magnitude = roundToTwoDecimals(calculateMagnitude(vector))
-    vector.angle = roundToTwoDecimals(calculateAngle(vector))
-    forceVectorsStore.updateVector(vector)
-  }
-}
-
-const updateYComponent = (vector, value) => {
-  const numValue = Number(value)
-  if (!isNaN(numValue)) {
-    vector.yComponent = numValue
-    vector.head.y = vector.tail.y + numValue
-    vector.magnitude = roundToTwoDecimals(calculateMagnitude(vector))
-    vector.angle = roundToTwoDecimals(calculateAngle(vector))
-    forceVectorsStore.updateVector(vector)
-  }
-}
-
-const updateMagnitude = (vector, value) => {
-  const numValue = Number(value)
-  if (!isNaN(numValue)) {
-    vector.magnitude = numValue
-    const angle = vector.angle * (Math.PI / 180)
-    vector.head.x = vector.tail.x + numValue * Math.cos(angle)
-    vector.head.y = vector.tail.y + numValue * Math.sin(angle)
-    vector.xComponent = roundToTwoDecimals(vector.head.x - vector.tail.x)
-    vector.yComponent = roundToTwoDecimals(vector.head.y - vector.tail.y)
-    forceVectorsStore.updateVector(vector)
-  }
-}
-
-const updateAngle = (vector, value) => {
-  const numValue = Number(value)
-  if (!isNaN(numValue)) {
-    vector.angle = numValue
-    const angle = numValue * (Math.PI / 180)
-    vector.head.x = vector.tail.x + vector.magnitude * Math.cos(angle)
-    vector.head.y = vector.tail.y + vector.magnitude * Math.sin(angle)
-    vector.xComponent = roundToTwoDecimals(vector.head.x - vector.tail.x)
-    vector.yComponent = roundToTwoDecimals(vector.head.y - vector.tail.y)
-    forceVectorsStore.updateVector(vector)
-  }
-}
-
-const openSettingsModal = () => {
-  settingsModalOpen.value = true
-}
-
-// Update vectors when objectExperiencingForce changes
-watch(() => props.objectExperiencingForce, (newValue) => {
-  if (newValue) {
-    forceVectorsStore.vectors.forEach(vector => {
-      if (!vector.objectExperiencingForce) {
-        vector.objectExperiencingForce = newValue
-      }
-    })
-  }
-})
-
-const netForceX = computed(() => {
-  return roundToTwoDecimals(localForceVectors.value.reduce((sum, vector) => sum + vector.xComponent, 0))
-})
-
-const netForceY = computed(() => {
-  return roundToTwoDecimals(localForceVectors.value.reduce((sum, vector) => sum + vector.yComponent, 0))
-})
-
-const netForceMagnitude = computed(() => {
-  return roundToTwoDecimals(
-    Math.sqrt(netForceX.value ** 2 + netForceY.value ** 2)
-  )
-})
-
-const netForceAngle = computed(() => {
-  let angle = Math.atan2(netForceY.value, netForceX.value) * (180 / Math.PI)
-  if (angle < 0) angle += 360
-  return roundToTwoDecimals(angle)
-})
-
-const renderKatex = (vector) => {
-  if (!vector.name) return '';
-  
-  try {
-    // Format the content with proper LaTeX notation
-    let content = vector.name;
-    
-    // If it doesn't already have $ signs, add proper vector notation
-    if (!content.includes('$')) {
-      content = content.trim();
-      // If it contains an underscore, it has a subscript
-      if (content.includes('_')) {
-        const [base, subscript] = content.split('_');
-        content = `\\vec{${base}}_{${subscript}}`; // Format as \vec{F}_N
-      } else {
-        content = `\\vec{${content}}`; // Just add vector notation
-      }
-    } else {
-      // Remove the dollar signs as katex doesn't need them
-      content = content.replace(/\$/g, '');
-    }
-    
-    return katex.renderToString(content, {
-      displayMode: false,
-      throwOnError: false,
-      output: 'html',
-      strict: false,
-      trust: true,
-      style: {
-        fontSize: '1em',
-      }
-    });
-  } catch (error) {
-    console.error('KaTeX rendering error:', error);
-    return vector.name; // Return plain text if rendering fails
-  }
-}
-
-const startEditingName = (vector) => {
-  editingStates.value.set(vector.id, true)
-}
-
-const finishEditingName = async (vector) => {
-  editingStates.value.delete(vector.id)
-  const renderedName = renderKatex(vector)
-  const updatedVector = {
-    ...vector,
-    renderedName: renderedName
-  }
-  // Update the vector in the store
-  forceVectorsStore.updateVector(updatedVector)
-}
-
-// Watch for changes to vector names
-watch(() => localForceVectors.value.map(v => v.name), (newNames, oldNames) => {
-  localForceVectors.value.forEach((vector, index) => {
-    if (newNames[index] !== oldNames?.[index]) {
-      const updatedVector = {
-        ...vector,
-        renderedName: renderKatex(vector)
-      }
-      forceVectorsStore.updateVector(updatedVector)
+const startEditingLabel = (vector) => {
+  tempLabel.value = vector.name
+  editingLabel.value = vector.id
+  nextTick(() => {
+    if (labelInput.value) {
+      labelInput.value.focus()
     }
   })
-}, { deep: true })
+}
+
+const finishEditingLabel = (vectorId) => {
+  const newLabel = tempLabel.value.trim()
+  if (newLabel) {
+    // First update the store
+    forceVectorsStore.updateVector({
+      ...forceVectorsStore.vectors.find(v => v.id === vectorId),
+      name: newLabel
+    })
+  }
+  editingLabel.value = null
+}
+
+const renderKatex = (text) => {
+  try {
+    return katex.renderToString(text, {
+      throwOnError: false,
+      displayMode: false
+    })
+  } catch (e) {
+    console.error('KaTeX error:', e)
+    return text
+  }
+}
+
+onMounted(() => {
+  initializeVectorComponents()
+})
+
+defineEmits(['highlightVector', 'unhighlightVector'])
 </script>
 
 <style scoped>
-.force-table-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+.force-table {
+  padding: 16px;
 }
 
-.controls-container {
+.button-container {
+  display: flex;
+  justify-content: center;
+}
+
+.mt-4 {
   margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.net-force-separator td {
-  padding: 0;
-}
-
-.net-force-separator hr {
-  margin: 0;
-  border: none;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 .net-force-row {
   font-weight: bold;
+  background-color: rgba(0, 0, 0, 0.03);
 }
 
-.math-content {
-  min-height: 32px;
-  padding: 4px 8px;
-  cursor: pointer;
+.components {
+  font-family: monospace;
+}
+
+.component-input {
   display: flex;
   align-items: center;
+  gap: 8px;
+  margin: 4px 0;
 }
 
-.math-content:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+.component-field {
+  width: 80px;
+  margin: 0;
 }
 
-/* KaTeX specific styles */
+/* Override Vuetify's default padding */
+:deep(.v-field__input) {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+.highlighted-row {
+  background-color: rgba(76, 175, 80, 0.1) !important; /* Light green with transparency */
+}
+
+.math-container {
+  cursor: text;
+  padding: 4px 8px;
+}
+
 :deep(.katex) {
-  font-size: 1em !important;
-  line-height: 1.2 !important;
-  color: black !important;
+  font-size: 1.1em;
 }
 
 :deep(.katex-html) {
-  white-space: normal !important;
-}
-
-td {
-  height: 48px !important;
-  padding: 0 8px !important;
-  vertical-align: middle !important;
-}
-
-.net-force-label :deep(.katex) {
-  font-size: 1.3em !important;  /* Adjust this value to make it bigger or smaller */
-}
-
-/* Make the numbers in the net force row bigger too */
-.net-force-row td {
-  font-size: 1.3em;
-}
-
-/* Make regular force names bigger */
-.math-content :deep(.katex) {
-    font-size: 1.3em !important;  /* Increase from 1em to 1.3em */
-}
-
-/* Keep net force even bigger or adjust if needed */
-.net-force-label :deep(.katex) {
-    font-size: 1.3em !important;
+  white-space: nowrap;
 }
 </style>
