@@ -56,6 +56,7 @@
                     class="component-field"
                     @update:model-value="updateVectorComponent(vector, 'x', $event)"
                   />
+                  <span class="unit-label">N</span>
                 </div>
                 <div class="component-input">
                   y: <v-text-field
@@ -67,12 +68,13 @@
                     class="component-field"
                     @update:model-value="updateVectorComponent(vector, 'y', $event)"
                   />
+                  <span class="unit-label">N</span>
                 </div>
               </template>
               <template v-else>
                 <div class="component-input">
                   r: <v-text-field
-                    :value="getMagnitude(vector).toFixed(2)"
+                    :value="getMagnitude(vector)"
                     :hide-details="true"
                     density="compact"
                     variant="outlined"
@@ -80,10 +82,11 @@
                     class="component-field"
                     @update:model-value="updateVectorPolar(vector, $event, getAngle(vector))"
                   />
+                  <span class="unit-label">N</span>
                 </div>
                 <div class="component-input">
                   θ: <v-text-field
-                    :value="getAngle(vector).toFixed(2)"
+                    :value="getAngle(vector)"
                     :hide-details="true"
                     density="compact"
                     variant="outlined"
@@ -91,6 +94,7 @@
                     class="component-field"
                     @update:model-value="updateVectorPolar(vector, getMagnitude(vector), $event)"
                   />
+                  <span class="unit-label">°</span>
                 </div>
               </template>
             </div>
@@ -119,7 +123,7 @@
               </template>
               <template v-else>
                 <div>r: {{ formatComponent(getNetMagnitude()) }}</div>
-                <div>θ: {{ formatComponent(getNetAngle()) }}</div>
+                <div>θ: {{ getNetAngle().toFixed(2) }}°</div>
               </template>
             </div>
           </td>
@@ -228,8 +232,11 @@ const getNetYComponent = () => {
   )
 }
 
-const formatComponent = (value) => {
-  return value.toFixed(2)
+const formatComponent = (value, includeUnit = true) => {
+  if (!includeUnit) return value.toFixed(2)
+  return value.toString().includes('°') 
+    ? value.toFixed(2) + '°'
+    : value.toFixed(2) + ' N'
 }
 
 const addForce = () => {
@@ -371,7 +378,13 @@ watch(coordinateSystem, (newValue) => {
   align-items: center;
   gap: 8px;
   margin: 4px 0;
-  min-width: 120px; /* Add minimum width to prevent layout shift between modes */
+  min-width: 140px; /* Increased to accommodate unit label */
+}
+
+.unit-label {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.9em;
+  min-width: 15px;
 }
 
 .component-field {

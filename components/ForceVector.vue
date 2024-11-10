@@ -280,7 +280,7 @@ const xMeasurementConfig = computed(() => {
     return {
         x: (x2 - x1) / 2,
         y: -20,
-        text: (props.head.x - props.tail.x).toFixed(1),
+        text: `${(props.head.x - props.tail.x).toFixed(1)} N`,
         fill: 'blue',
         align: 'center'
     }
@@ -298,7 +298,7 @@ const yMeasurementConfig = computed(() => {
     return {
         x: x2 - x1 + 10,
         y: (y2 - y1) / 2,
-        text: (props.head.y - props.tail.y).toFixed(1),
+        text: `${(props.head.y - props.tail.y).toFixed(1)} N`,
         fill: 'red',
         align: 'left'
     }
@@ -324,9 +324,9 @@ const magnitudeMeasurementConfig = computed(() => {
     // Position magnitude label further along the vector
     return {
         x: dx / 2,
-        y: dy / 2 - 40, // Increased offset from -20 to -40
-        text: magnitude.toFixed(1),
-        fill: 'black',
+        y: dy / 2 - 40,
+        text: `${magnitude.toFixed(1)} N`,
+        fill: 'green',
         align: 'center'
     }
 })
@@ -364,13 +364,13 @@ const angleMeasurementConfig = computed(() => {
     while (angle <= -180) angle += 360
     
     const arcRadius = 20
-    const midAngle = angle / 2  // Position text at midpoint of arc
+    const midAngle = angle / 2
     
     return {
         x: arcRadius * Math.cos(midAngle * Math.PI / 180),
         y: arcRadius * Math.sin(midAngle * Math.PI / 180),
         text: `${angle.toFixed(1)}°`,
-        fill: 'black',
+        fill: 'green',
         align: 'center'
     }
 })
