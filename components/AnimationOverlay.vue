@@ -53,22 +53,23 @@ const animateVectors = async () => {
   console.log('Starting vector animation')
   animatingVectors.value = []
 
-  // Calculate the distance to move to the center of the right grid
-  const moveDistance = props.configStage.width + 100 // 500px (grid width) + 100px (gap)
+  const moveDistance = props.configStage.width + 100
 
-  // Keep track of cumulative position in the right grid
-  let cumulative = { x: 0, y: 0 }
+  // Initialize cumulative position at (0,0)
+  let cumulative = { 
+    x: 0,
+    y: 0 
+  }
 
-  // Animate each vector one by one
   for (const vector of props.forceVectors) {
-    console.log('Animating vector:', vector)
-    
-    // Calculate vector displacement
+    // Calculate vector components
     const dx = vector.head.x - vector.tail.x
     const dy = vector.head.y - vector.tail.y
+    
+    // Calculate angle for arrowhead offset
     const angle = Math.atan2(dy, dx)
     
-    // Start position - use the exact position from the FBD
+    // Start position - exact position from FBD
     const startVector = {
       id: vector.id,
       tail: { ...vector.tail },
@@ -76,10 +77,13 @@ const animateVectors = async () => {
       name: vector.name
     }
 
-    // End position in the FAD
+    // End position - in the right grid
     const endVector = {
       id: vector.id,
-      tail: { ...cumulative },
+      tail: { 
+        x: cumulative.x,
+        y: cumulative.y
+      },
       head: {
         x: cumulative.x + dx,
         y: cumulative.y + dy
@@ -93,7 +97,7 @@ const animateVectors = async () => {
     // Animate the vector
     await new Promise(resolve => {
       const startTime = Date.now()
-      const duration = 1000 // 1 second animation
+      const duration = 1000
 
       const animate = () => {
         const elapsed = Date.now() - startTime
@@ -128,17 +132,16 @@ const animateVectors = async () => {
       requestAnimationFrame(animate)
     })
 
-    // Update cumulative position for next vector
+    // Update cumulative position with arrowhead offset
     cumulative = {
-      x: endVector.head.x,
-      y: endVector.head.y
+      x: endVector.head.x + (ARROW_HEAD_LENGTH * Math.cos(angle) / GRID_SCALE),
+      y: endVector.head.y + (ARROW_HEAD_LENGTH * Math.sin(angle) / GRID_SCALE)
     }
 
-    // Pause between vectors
     await new Promise(resolve => setTimeout(resolve, 200))
   }
 
-  // Clear the vectors after animation is complete
+  await new Promise(resolve => setTimeout(resolve, 1000))
   animatingVectors.value = []
   console.log('Animation complete')
 }
