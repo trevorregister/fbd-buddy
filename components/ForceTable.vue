@@ -286,7 +286,11 @@ onMounted(() => {
   initializeVectorComponents()
 })
 
-defineEmits(['highlightVector', 'unhighlightVector'])
+const emit = defineEmits([
+  'highlightVector', 
+  'unhighlightVector', 
+  'updateCoordinateSystem'
+])
 
 // Add coordinateSystem ref
 const coordinateSystem = ref('cartesian')
@@ -329,6 +333,11 @@ const getNetAngle = () => {
   const netY = getNetYComponent()
   return Math.atan2(netY, netX) * 180 / Math.PI
 }
+
+// In the script section, add a watch to emit coordinate system changes
+watch(coordinateSystem, (newValue) => {
+  emit('updateCoordinateSystem', newValue)
+})
 </script>
 
 <style scoped>

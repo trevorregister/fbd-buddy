@@ -23,6 +23,7 @@
             :label="vector.name"
             :highlighted="vector.id === forceVectorsStore.highlightedVectorId"
             :hideLabels="hideLabels"
+            :coordinateSystem="coordinateSystem"
             @mouseenter="highlightVector(vector.id)"
             @mouseleave="unhighlightVector"
           />  
@@ -88,6 +89,10 @@ const props = defineProps({
   hideLabels: {
     type: Boolean,
     default: false
+  },
+  coordinateSystem: {
+    type: String,
+    default: 'cartesian'
   }
 })
 

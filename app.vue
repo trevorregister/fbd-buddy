@@ -27,6 +27,7 @@
               :hideLabels="hideLabels"
               :isAnimating="isAnimating"
               :highlightedVectorId="forceVectorsStore.highlightedVectorId"
+              :coordinateSystem="coordinateSystem"
               @updateVectorHead="updateVectorHead"
             />
             <div class="button-container">
@@ -55,6 +56,7 @@
                     :objectExperiencingForce="objectExperiencingForce"
                     @highlightVector="highlightVector"
                     @unhighlightVector="unhighlightVector"
+                    @updateCoordinateSystem="updateCoordinateSystem"
                   />
                 </v-window-item>
 
@@ -66,6 +68,7 @@
                     :hideLabels="hideLabels"
                     :isAnimating="isAnimating"
                     :isPaused="isPaused"
+                    :coordinateSystem="coordinateSystem"
                     @animate="animateVectors"
                     @togglePause="togglePause"
                   />
@@ -205,6 +208,12 @@ const updateVectorHead = (id, newHead) => {
 }
 
 const activeTab = ref('interaction')
+
+const coordinateSystem = ref('cartesian')
+
+const updateCoordinateSystem = (newSystem) => {
+  coordinateSystem.value = newSystem
+}
 </script>
 
 <style scoped>

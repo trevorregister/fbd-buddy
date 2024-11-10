@@ -43,6 +43,7 @@
               :label="vector.name"
               :offset="vectorOffsets.get(vector.id) || { x: 0, y: 0 }"
               :hideLabels="hideLabels"
+              :coordinateSystem="coordinateSystem"
               @update:head="(newHead) => updateVectorHead(vector.id, newHead)"
             />  
           </v-layer>
@@ -66,7 +67,11 @@ const props = defineProps({
   hideGrid: Boolean,
   showComponents: Boolean,
   isAnimating: Boolean,
-  hideLabels: Boolean
+  hideLabels: Boolean,
+  coordinateSystem: {
+    type: String,
+    default: 'cartesian'
+  }
 })
 
 const emit = defineEmits(['updateVectorHead', 'update:objectExperiencingForce'])

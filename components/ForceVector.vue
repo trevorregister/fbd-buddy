@@ -3,16 +3,37 @@
         <v-line :config="lineConfig" />
         <v-regular-polygon :config="arrowHeadConfig" />
         <v-circle :config="dragHandleConfig" @dragmove="handleArrowHeadDragMove" />
+        
+        <!-- Component lines (always visible when showComponents is true) -->
+        <template v-if="showComponents">
+            <template v-if="coordinateSystem === 'cartesian'">
+                <v-line :config="xComponentConfig" />
+                <v-line :config="yComponentConfig" />
+            </template>
+        </template>
+
+        <!-- Component measurements (only visible on hover) -->
+        <template v-if="showComponents && isHighlighted">
+            <template v-if="coordinateSystem === 'cartesian'">
+                <v-text :config="xMeasurementConfig" />
+                <v-text :config="yMeasurementConfig" />
+            </template>
+            <template v-else>
+                <v-text :config="magnitudeMeasurementConfig" />
+                <v-arc :config="angleArcConfig" />
+                <v-text :config="angleMeasurementConfig" />
+            </template>
+        </template>
+
+        <!-- Vector label -->
         <v-label 
-            v-if="!props.hideLabels && (props.name || props.label)" 
+            v-if="shouldShowLabel" 
             :config="labelGroupConfig"
         >
             <v-tag :config="labelTagConfig" />
             <v-text :config="mainTextConfig" />
             <v-text v-if="parsedLabel.subscript" :config="subscriptConfig" />
         </v-label>
-        <v-line v-if="showComponents" :config="xComponentConfig" />
-        <v-line v-if="showComponents" :config="yComponentConfig" />
     </v-group>
 </template>
 
@@ -22,6 +43,8 @@ import { gridToCanvasCoordinates, canvasToGridCoordinates } from '~/utils/coordi
 import { useDebounceFn } from '@vueuse/core'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
+
+const GRID_SCALE = 15
 
 const props = defineProps({
     tail: {
@@ -63,6 +86,10 @@ const props = defineProps({
     hideLabels: {
         type: Boolean,
         default: false
+    },
+    coordinateSystem: {
+        type: String,
+        default: 'cartesian'
     }
 })
 
@@ -241,6 +268,112 @@ const yComponentConfig = computed(() => {
     }
 })
 
+const xMeasurementConfig = computed(() => {
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(
+        props.head.x + props.offset.x,
+        props.head.y + props.offset.y
+    )
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(
+        props.tail.x + props.offset.x,
+        props.tail.y + props.offset.y
+    )
+    return {
+        x: (x2 - x1) / 2,
+        y: -20,
+        text: (props.head.x - props.tail.x).toFixed(1),
+        fill: 'blue',
+        align: 'center'
+    }
+})
+
+const yMeasurementConfig = computed(() => {
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(
+        props.head.x + props.offset.x,
+        props.head.y + props.offset.y
+    )
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(
+        props.tail.x + props.offset.x,
+        props.tail.y + props.offset.y
+    )
+    return {
+        x: x2 - x1 + 10,
+        y: (y2 - y1) / 2,
+        text: (props.head.y - props.tail.y).toFixed(1),
+        fill: 'red',
+        align: 'left'
+    }
+})
+
+const magnitudeMeasurementConfig = computed(() => {
+    const { x: x2, y: y2 } = gridToCanvasCoordinates(
+        props.head.x + props.offset.x,
+        props.head.y + props.offset.y
+    )
+    const { x: x1, y: y1 } = gridToCanvasCoordinates(
+        props.tail.x + props.offset.x,
+        props.tail.y + props.offset.y
+    )
+    const dx = x2 - x1
+    const dy = y2 - y1
+    const magnitude = Math.sqrt(
+        Math.pow(props.head.x - props.tail.x, 2) + 
+        Math.pow(props.head.y - props.tail.y, 2)
+    )
+    const angle = Math.atan2(dy, dx)
+    
+    // Position magnitude label further along the vector
+    return {
+        x: dx / 2,
+        y: dy / 2 - 40, // Increased offset from -20 to -40
+        text: magnitude.toFixed(1),
+        fill: 'black',
+        align: 'center'
+    }
+})
+
+const angleArcConfig = computed(() => {
+    const dx = props.head.x - props.tail.x
+    const dy = props.head.y - props.tail.y
+    let angle = Math.atan2(dy, dx) * 180 / Math.PI
+    let clockwise = angle >0
+    if (clockwise) {
+        angle = 360 - Math.abs(angle)
+    }
+    return {
+        x: 0,
+        y: 0,
+        innerRadius: 30,
+        outerRadius: 30,
+        angle: Math.abs(angle),  // Use positive angle magnitude
+        rotation: 0,
+        fill: 'transparent',
+        stroke: 'black',
+        strokeWidth: 1,
+       clockwise  // Draw clockwise for all arcs
+    }
+})
+
+const angleMeasurementConfig = computed(() => {
+    const dx = props.head.x - props.tail.x
+    const dy = props.head.y - props.tail.y
+    let angle = Math.atan2(dy, dx) * 180 / Math.PI
+    
+    // Normalize angle to [-180, 180]
+    while (angle > 180) angle -= 360
+    while (angle <= -180) angle += 360
+    
+    const arcRadius = 20
+    const midAngle = angle / 2  // Position text at midpoint of arc
+    
+    return {
+        x: arcRadius * Math.cos(midAngle * Math.PI / 180),
+        y: arcRadius * Math.sin(midAngle * Math.PI / 180),
+        text: `${angle.toFixed(1)}°`,
+        fill: 'black',
+        align: 'center'
+    }
+})
+
 const handleArrowHeadDragMove = (e) => {
     const dragHandle = e.target
     const group = dragHandle.getParent()
@@ -279,6 +412,8 @@ const renderKatex = (text) => {
     return text;
   }
 }
+
+const shouldShowLabel = computed(() => !props.hideLabels && (props.name || props.label))
 </script>
 
 <style>
