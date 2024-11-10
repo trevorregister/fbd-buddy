@@ -342,12 +342,13 @@ const angleArcConfig = computed(() => {
     return {
         x: 0,
         y: 0,
-        innerRadius: 30,
+        innerRadius: 5,
         outerRadius: 30,
+        opacity: 0.5,
         angle: Math.abs(angle),  // Use positive angle magnitude
         rotation: 0,
-        fill: 'transparent',
-        stroke: 'black',
+        fill: 'green',
+        stroke: 'green',
         strokeWidth: 1,
        clockwise  // Draw clockwise for all arcs
     }
