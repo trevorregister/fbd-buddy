@@ -9,7 +9,7 @@
     >
       <!-- Draw objects -->
       <g
-        v-for="object in objects"
+        v-for="object in store.objects"
         :key="object.id"
         :transform="'translate(' + object.x + ',' + object.y + ')'"
         @mousedown.stop.prevent="onObjectMouseDown($event, object)"
@@ -44,7 +44,7 @@
 
       <!-- Draw interactions -->
       <g
-        v-for="interaction in interactions"
+        v-for="interaction in store.interactions"
         :key="interaction.id"
         @mousedown.stop.prevent="onInteractionMouseDown($event, interaction)"
       >
@@ -55,10 +55,10 @@
           stroke-width="2"
         />
         <foreignObject
-          :x="getInteractionMidpoint(interaction).x - 50"
-          :y="getInteractionMidpoint(interaction).y - 15"
-          width="100"
-          height="30"
+          :x="getInteractionMidpoint(interaction).x - 25"
+          :y="getInteractionMidpoint(interaction).y - 8"
+          width="50"
+          height="20"
         >
           <div 
             xmlns="http://www.w3.org/1999/xhtml" 
@@ -70,10 +70,9 @@
       </g>
     </svg>
 
-    <!-- Updated button container with only Object and Interaction buttons -->
     <div class="button-container">
-      <v-btn @click="addObject" class="mr-4">+ Object</v-btn>
-      <v-btn @click="showInteractionDialog = true" :disabled="selectedObjects.length !== 2">
+      <v-btn @click="addNewObject" class="mr-4">+ Object</v-btn>
+      <v-btn @click="showInteractionDialog = true" :disabled="store.selectedObjects.length !== 2">
         + Interaction
       </v-btn>
     </div>
@@ -85,7 +84,7 @@
         <v-card-text>
           <v-select
             v-model="selectedInteractionType"
-            :items="interactionTypes"
+            :items="store.interactionTypes"
             item-title="text"
             item-value="value"
             label="Select Interaction Type"
@@ -101,219 +100,195 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
+import { useInteractionDiagramStore } from '~/stores/interactionDiagram'
 
-export default {
-  name: "InteractionDiagram",
-  data() {
-    return {
-      canvasSize: 500,
-      objectWidth: 60,
-      objectHeight: 40,
-      objects: [],
-      interactions: [],
-      selectedObjects: [],
-      dragData: null,
-      showInteractionDialog: false,
-      selectedInteractionType: null,
-      interactionTypes: [
-        { text: 'Gravitational', value: '\\vec{F}_g' },
-        { text: 'Electrostatic', value: '\\vec{F}_e' },
-        { text: 'Magnetic', value: '\\vec{F}_m' },
-        { text: 'Normal', value: '\\vec{N}' },
-        { text: 'Frictional', value: '\\vec{f}' }
-      ]
-    };
-  },
-  methods: {
-    addObject() {
-      const newObject = {
-        id: Date.now(),
-        x: this.canvasSize / 2,
-        y: this.canvasSize / 2,
-        label: "Object",
-        selected: false,
-        isEditing: false,
-      };
-      this.objects.push(newObject);
-    },
-    startEditing(object) {
-      // First set all objects to not editing
-      this.objects.forEach(obj => obj.isEditing = false);
-      // Then set this object to editing
-      object.isEditing = true;
-      this.$nextTick(() => {
-        const input = this.$refs.editInput;
-        if (input && input.length > 0) {
-          input[0].focus();
-          input[0].select();
-        }
-      });
-    },
-    stopEditing(object) {
-      object.isEditing = false;
-    },
-    editObjectLabel(object) {
-      const label = prompt("Enter object label:", object.label);
-      if (label !== null) {
-        object.label = label;
-      }
-    },
-    onObjectMouseDown(event, object) {
-      if (event.shiftKey) {
-        // Toggle selection
-        object.selected = !object.selected;
-        if (object.selected) {
-          this.selectedObjects.push(object);
-        } else {
-          this.selectedObjects = this.selectedObjects.filter(
-            (obj) => obj.id !== object.id
-          );
-        }
-      } else {
-        // Start dragging
-        const rect = this.$refs.svgCanvas.getBoundingClientRect();
-        this.dragData = {
-          type: "object",
-          object: object,
-          offsetX: event.clientX - rect.left - object.x,
-          offsetY: event.clientY - rect.top - object.y,
-        };
-      }
-    },
-    createInteraction() {
-      const [obj1, obj2] = this.selectedObjects;
-      const newInteraction = {
-        id: Date.now(),
-        fromObjectId: obj1.id,
-        toObjectId: obj2.id,
-        label: this.selectedInteractionType,
-      };
-      this.interactions.push(newInteraction);
-      
-      // Reset selection
-      this.objects.forEach((obj) => (obj.selected = false));
-      this.selectedObjects = [];
-      // Close dialog and reset selection
-      this.showInteractionDialog = false;
-      this.selectedInteractionType = null;
-    },
-    getInteractionPath(interaction) {
-    const fromObject = this.objects.find(
-      (obj) => obj.id === interaction.fromObjectId
-    );
-    const toObject = this.objects.find(
-      (obj) => obj.id === interaction.toObjectId
-    );
-    if (!fromObject || !toObject) return "";
+const store = useInteractionDiagramStore()
 
-    const fromPoint = this.getEllipseEdgePoint(fromObject, toObject);
-    const toPoint = this.getEllipseEdgePoint(toObject, fromObject);
+const canvasSize = 500
+const objectWidth = 60
+const objectHeight = 40
+const dragData = ref(null)
+const showInteractionDialog = ref(false)
+const selectedInteractionType = ref(null)
+const svgCanvas = ref(null)
+const editInput = ref(null)
 
-    const controlPoint = {
-      x: (fromPoint.x + toPoint.x) / 2,
-      y: Math.min(fromPoint.y, toPoint.y) - 50,
-    };
-    return `M ${fromPoint.x} ${fromPoint.y} Q ${controlPoint.x} ${controlPoint.y} ${toPoint.x} ${toPoint.y}`;
-  },
+const addNewObject = () => {
+  store.addObject(canvasSize / 2, canvasSize / 2)
+}
 
-  getEllipseEdgePoint(fromObject, toObject) {
-    const dx = toObject.x - fromObject.x;
-    const dy = toObject.y - fromObject.y;
-    const angle = Math.atan2(dy, dx);
+const startEditing = (object) => {
+  store.setObjectEditing(object.id, true)
+  nextTick(() => {
+    if (editInput.value && editInput.value.length > 0) {
+      editInput.value[0].focus()
+      editInput.value[0].select()
+    }
+  })
+}
 
-    const rx = this.objectWidth / 2;
-    const ry = this.objectHeight / 2;
+const stopEditing = (object) => {
+  store.setObjectEditing(object.id, false)
+  store.updateObjectLabel(object.id, object.label)
+}
 
-    const edgeX = fromObject.x + rx * Math.cos(angle);
-    const edgeY = fromObject.y + ry * Math.sin(angle);
+const onObjectMouseDown = (event, object) => {
+  if (event.shiftKey) {
+    store.toggleObjectSelection(object.id)
+  } else {
+    const rect = svgCanvas.value.getBoundingClientRect()
+    dragData.value = {
+      type: "object",
+      object: object,
+      offsetX: event.clientX - rect.left - object.x,
+      offsetY: event.clientY - rect.top - object.y,
+    }
+  }
+}
 
-    return { x: edgeX, y: edgeY };
-  },
+const getInteractionPath = (interaction) => {
+  const fromObject = store.objects.find(
+    (obj) => obj.id === interaction.fromObjectId
+  );
+  const toObject = store.objects.find(
+    (obj) => obj.id === interaction.toObjectId
+  );
+  if (!fromObject || !toObject) return "";
 
-    getInteractionMidpoint(interaction) {
-      const fromObject = this.objects.find(
-        (obj) => obj.id === interaction.fromObjectId
-      );
-      const toObject = this.objects.find(
-        (obj) => obj.id === interaction.toObjectId
-      );
-      if (!fromObject || !toObject) return { x: 0, y: 0 };
-      return {
-        x: (fromObject.x + toObject.x) / 2,
-        y: (fromObject.y + toObject.y) / 2,
-      };
-    },
-    onCanvasMouseDown(event) {
-      // Clear selection when clicking on canvas
-      this.objects.forEach((obj) => (obj.selected = false));
-      this.selectedObjects = [];
-    },
-    onInteractionMouseDown(event, interaction) {
-      // Start dragging interaction (adjust control point)
-      this.dragData = {
-        type: "interaction",
-        interaction: interaction,
-        offsetX: event.offsetX,
-        offsetY: event.offsetY,
-      };
-    },
-    onMouseMove(event) {
-      if (!this.dragData) return;
-      
-      if (this.dragData.type === "object") {
-        const rect = this.$refs.svgCanvas.getBoundingClientRect();
-        const newX = event.clientX - rect.left - this.dragData.offsetX;
-        const newY = event.clientY - rect.top - this.dragData.offsetY;
-        
-        // Update constraint to use full canvasSize
-        const object = this.dragData.object;
-        const halfWidth = this.objectWidth / 2;
-        const halfHeight = this.objectHeight / 2;
-        
-        object.x = Math.max(halfWidth, Math.min(this.canvasSize - halfWidth, newX));
-        object.y = Math.max(halfHeight, Math.min(this.canvasSize - halfHeight, newY));
-      }
-    },
-    onMouseUp() {
-      this.dragData = null;
-    },
-    renderKatex(text) {
-      try {
-        return katex.renderToString(text, {
-          throwOnError: false,
-          displayMode: true
-        });
-      } catch (e) {
-        console.error('KaTeX error:', e);
-        return text;
-      }
-    },
-  },
-  mounted() {
-    const svgCanvas = this.$refs.svgCanvas;
-    svgCanvas.addEventListener("mousemove", this.onMouseMove);
-    svgCanvas.addEventListener("mouseup", this.onMouseUp);
-    svgCanvas.addEventListener("mouseleave", this.onMouseUp);
-    window.addEventListener("mousemove", this.onMouseMove);
-    window.addEventListener("mouseup", this.onMouseUp);
-  },
-  beforeUnmount() {
-    const svgCanvas = this.$refs.svgCanvas;
-    svgCanvas.removeEventListener("mousemove", this.onMouseMove);
-    svgCanvas.removeEventListener("mouseup", this.onMouseUp);
-    svgCanvas.removeEventListener("mouseleave", this.onMouseUp);
-    window.removeEventListener("mousemove", this.onMouseMove);
-    window.removeEventListener("mouseup", this.onMouseUp);
-  },
-};
+  const fromPoint = getEllipseEdgePoint(fromObject, toObject);
+  const toPoint = getEllipseEdgePoint(toObject, fromObject);
+
+  // Get all interactions between these two objects
+  const interactions = store.getInteractionsBetween(fromObject.id, toObject.id);
+  // Find index of current interaction
+  const currentIndex = interactions.findIndex(i => i.id === interaction.id);
+  
+  // Calculate offset based on interaction index
+  const baseHeight = 50;
+  const heightOffset = currentIndex * 30;
+  const arcHeight = baseHeight + heightOffset;
+
+  // Determine if arc should go above or below based on relative positions
+  const shouldInvert = fromPoint.x > toPoint.x;
+  const finalArcHeight = shouldInvert ? -arcHeight : arcHeight;
+
+  const controlPoint = {
+    x: (fromPoint.x + toPoint.x) / 2,
+    y: Math.min(fromPoint.y, toPoint.y) - finalArcHeight,
+  };
+  return `M ${fromPoint.x} ${fromPoint.y} Q ${controlPoint.x} ${controlPoint.y} ${toPoint.x} ${toPoint.y}`;
+}
+
+const getEllipseEdgePoint = (fromObject, toObject) => {
+  const dx = toObject.x - fromObject.x;
+  const dy = toObject.y - fromObject.y;
+  const angle = Math.atan2(dy, dx);
+
+  const rx = objectWidth / 2;
+  const ry = objectHeight / 2;
+
+  const edgeX = fromObject.x + rx * Math.cos(angle);
+  const edgeY = fromObject.y + ry * Math.sin(angle);
+
+  return { x: edgeX, y: edgeY };
+}
+
+const getInteractionMidpoint = (interaction) => {
+  const fromObject = store.objects.find(
+    (obj) => obj.id === interaction.fromObjectId
+  );
+  const toObject = store.objects.find(
+    (obj) => obj.id === interaction.toObjectId
+  );
+  if (!fromObject || !toObject) return { x: 0, y: 0 };
+
+  const fromPoint = getEllipseEdgePoint(fromObject, toObject);
+  const toPoint = getEllipseEdgePoint(toObject, fromObject);
+
+  // Get all interactions between these two objects
+  const interactions = store.getInteractionsBetween(fromObject.id, toObject.id);
+  // Find index of current interaction
+  const currentIndex = interactions.findIndex(i => i.id === interaction.id);
+  
+  // Calculate offset based on interaction index
+  const baseHeight = 50;
+  const heightOffset = currentIndex * 30;
+  const arcHeight = baseHeight + heightOffset;
+
+  // Determine if arc should go above or below based on relative positions
+  const shouldInvert = fromPoint.x > toPoint.x;
+  const finalArcHeight = shouldInvert ? -arcHeight : arcHeight;
+  
+  return {
+    x: (fromPoint.x + toPoint.x) / 2,
+    y: Math.min(fromPoint.y, toPoint.y) - finalArcHeight,
+  };
+}
+
+const createInteraction = () => {
+  store.addInteraction(selectedInteractionType.value)
+  showInteractionDialog.value = false
+  selectedInteractionType.value = null
+}
+
+const onCanvasMouseDown = () => {
+  store.clearSelection()
+}
+
+const onMouseMove = (event) => {
+  if (!dragData.value) return
+  
+  if (dragData.value.type === "object") {
+    const rect = svgCanvas.value.getBoundingClientRect()
+    const newX = event.clientX - rect.left - dragData.value.offsetX
+    const newY = event.clientY - rect.top - dragData.value.offsetY
+    
+    const halfWidth = objectWidth / 2
+    const halfHeight = objectHeight / 2
+    
+    const constrainedX = Math.max(halfWidth, Math.min(canvasSize - halfWidth, newX))
+    const constrainedY = Math.max(halfHeight, Math.min(canvasSize - halfHeight, newY))
+    
+    store.updateObjectPosition(dragData.value.object.id, constrainedX, constrainedY)
+  }
+}
+
+const onMouseUp = () => {
+  dragData.value = null
+}
+
+onMounted(() => {
+  window.addEventListener("mousemove", onMouseMove)
+  window.addEventListener("mouseup", onMouseUp)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener("mousemove", onMouseMove)
+  window.removeEventListener("mouseup", onMouseUp)
+})
+
+const renderKatex = (text) => {
+  try {
+    return katex.renderToString(text, {
+      throwOnError: false,
+      displayMode: true
+    });
+  } catch (e) {
+    console.error('KaTeX error:', e);
+    return text;
+  }
+}
 </script>
 
 <style scoped>
 svg {
   cursor: default;
+  width: 100%;
+  height: 500px;
 }
 
 input:focus {
@@ -326,18 +301,22 @@ input:focus {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: white;
+  background: rgba(255, 255, 255, 0.7);
   font-size: 14px;
+  padding: 0px 2px;
+  border-radius: 3px;
 }
 
 /* Add KaTeX specific styles */
 .katex {
-  font-size: 1.1em !important;
+  font-size: 1em !important;
   color: red;
+  line-height: 1;
 }
 
 .katex-display {
   margin: 0 !important;
+  padding: 0 !important;
 }
 
 .button-container {
