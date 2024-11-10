@@ -13,6 +13,7 @@
             :configStage="configStage"
             :hideLabels="hideLabels"
             :forceVectors="forceVectorsStore.vectors.map(v => ({ ...v, label: v.name }))"
+            :isPaused="isPaused"
             class="animation-overlay"
           />
           <div class="left-column">
@@ -64,7 +65,9 @@
                     :showComponents="showComponents"
                     :hideLabels="hideLabels"
                     :isAnimating="isAnimating"
+                    :isPaused="isPaused"
                     @animate="animateVectors"
+                    @togglePause="togglePause"
                   />
                 </v-window-item>
               </v-window>
@@ -154,22 +157,22 @@ const handleImageUpload = (event) => {
 const objectExperiencingForce = ref('')
 
 const isAnimating = ref(false)
+const isPaused = ref(false)
 const animationOverlay = ref(null)
+
+const togglePause = () => {
+  isPaused.value = !isPaused.value
+  if (animationOverlay.value) {
+    animationOverlay.value.togglePause(isPaused.value)
+  }
+}
 
 const animateVectors = async () => {
   if (isAnimating.value) return
   console.log('Starting animation sequence')
   
-  console.log('Force vectors being passed to overlay:', 
-    forceVectorsStore.vectors.map(v => ({
-      id: v.id,
-      label: v.label,
-      tail: v.tail,
-      head: v.head
-    }))
-  )
-  
   isAnimating.value = true
+  isPaused.value = false
 
   await nextTick()
 
@@ -184,6 +187,7 @@ const animateVectors = async () => {
     console.error('Animation error:', error)
   } finally {
     isAnimating.value = false
+    isPaused.value = false
     console.log('Animation sequence complete')
   }
 }

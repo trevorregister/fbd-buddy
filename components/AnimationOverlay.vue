@@ -34,6 +34,10 @@ const props = defineProps({
   hideLabels: {
     type: Boolean,
     default: false
+  },
+  isPaused: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -98,9 +102,24 @@ const animateVectors = async () => {
     await new Promise(resolve => {
       const startTime = Date.now()
       const duration = 1000
+      let pausedTime = 0
+      let lastPauseTime = null
 
       const animate = () => {
-        const elapsed = Date.now() - startTime
+        if (props.isPaused) {
+          if (!lastPauseTime) {
+            lastPauseTime = Date.now()
+          }
+          requestAnimationFrame(animate)
+          return
+        }
+
+        if (lastPauseTime) {
+          pausedTime += Date.now() - lastPauseTime
+          lastPauseTime = null
+        }
+
+        const elapsed = Date.now() - startTime - pausedTime
         const progress = Math.min(elapsed / duration, 1)
         
         // Calculate current position
@@ -138,7 +157,9 @@ const animateVectors = async () => {
       y: endVector.head.y + (ARROW_HEAD_LENGTH * Math.sin(angle) / GRID_SCALE)
     }
 
-    await new Promise(resolve => setTimeout(resolve, 200))
+    if (!props.isPaused) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+    }
   }
 
   await new Promise(resolve => setTimeout(resolve, 1000))

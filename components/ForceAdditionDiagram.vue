@@ -48,8 +48,8 @@
       </v-stage>
     </ClientOnly>
     <div class="button-container">
-      <v-btn @click="$emit('animate')" :disabled="isAnimating">
-        {{ isAnimating ? 'Animating...' : 'Animate Vectors' }}
+      <v-btn @click="handleAnimationControl">
+        {{ buttonText }}
       </v-btn>
     </div>
   </div>
@@ -78,6 +78,10 @@ const props = defineProps({
     required: true
   },
   isAnimating: {
+    type: Boolean,
+    default: false
+  },
+  isPaused: {
     type: Boolean,
     default: false
   },
@@ -237,6 +241,24 @@ const netForceSubscriptConfig = computed(() => ({
   y: 6
 }))
 
+// Update button text based on animation state
+const buttonText = computed(() => {
+  if (!props.isAnimating) return 'Animate Vectors'
+  return props.isPaused ? 'Resume Animation' : 'Pause'
+})
+
+// Handle animation control
+const handleAnimationControl = () => {
+  if (!props.isAnimating) {
+    emit('animate')
+  } else {
+    emit('togglePause')
+  }
+}
+
+// Update emits
+const emit = defineEmits(['animate', 'togglePause'])
+
 // Watch for animation end and trigger net force animation
 watch(() => props.isAnimating, async (newValue, oldValue) => {
   if (newValue) { // Animation starting
@@ -271,9 +293,6 @@ const highlightVector = (id) => {
 const unhighlightVector = () => {
   forceVectorsStore.clearHighlightedVector()
 }
-
-// Add emit for animate button click
-defineEmits(['animate'])
 </script>
 
 <style scoped>
