@@ -5,7 +5,9 @@
       :width="canvasSize"
       :height="canvasSize"
       @mousedown="onCanvasMouseDown"
-      style="border:1px solid black"
+      @keydown="onKeyDown"
+      tabindex="0"
+      style="border:1px solid black; outline: none;"
     >
       <!-- Draw objects -->
       <g
@@ -68,6 +70,36 @@
           </div>
         </foreignObject>
       </g>
+
+      <!-- System boundary -->
+      <g v-if="systemBoundary">
+        <ellipse
+          :cx="systemBoundary.x + systemBoundary.width/2"
+          :cy="systemBoundary.y + systemBoundary.height/2"
+          :rx="systemBoundary.width/2"
+          :ry="systemBoundary.height/2"
+          fill="rgba(0,0,0,0.01)"
+          :stroke="isSystemSelected ? '#2196F3' : 'black'"
+          :stroke-width="isSystemSelected ? 2 : 1"
+          stroke-dasharray="5,5"
+          @mousedown.stop.prevent="onSystemBoundaryMouseDown"
+          style="cursor: move; pointer-events: all;"
+        />
+        
+        <!-- Resize handles -->
+        <template v-for="handle in ['nw', 'ne', 'sw', 'se']" :key="handle">
+          <rect
+            :x="handle.includes('w') ? systemBoundary.x - HANDLE_SIZE/2 : systemBoundary.x + systemBoundary.width - HANDLE_SIZE/2"
+            :y="handle.includes('n') ? systemBoundary.y - HANDLE_SIZE/2 : systemBoundary.y + systemBoundary.height - HANDLE_SIZE/2"
+            :width="HANDLE_SIZE"
+            :height="HANDLE_SIZE"
+            fill="white"
+            stroke="black"
+            @mousedown.stop="onResizeHandleMouseDown($event, handle)"
+            style="cursor: pointer;"
+          />
+        </template>
+      </g>
     </svg>
 
     <div class="button-container">
@@ -75,6 +107,7 @@
       <v-btn @click="showInteractionDialog = true" :disabled="store.selectedObjects.length !== 2">
         + Interaction
       </v-btn>
+      <v-btn @click="addSystemBoundary" class="ml-4">+ System</v-btn>
     </div>
 
     <!-- Interaction Dialog -->
@@ -116,6 +149,11 @@ const showInteractionDialog = ref(false)
 const selectedInteractionType = ref(null)
 const svgCanvas = ref(null)
 const editInput = ref(null)
+const systemBoundary = ref(null)
+const isResizing = ref(false)
+const resizeHandle = ref(null)
+const HANDLE_SIZE = 8
+const isSystemSelected = ref(false)
 
 const addNewObject = () => {
   store.addObject(canvasSize / 2, canvasSize / 2)
@@ -237,15 +275,19 @@ const createInteraction = () => {
 
 const onCanvasMouseDown = () => {
   store.clearSelection()
+  isSystemSelected.value = false
 }
 
 const onMouseMove = (event) => {
   if (!dragData.value) return
   
+  const rect = svgCanvas.value.getBoundingClientRect()
+  const mouseX = event.clientX - rect.left
+  const mouseY = event.clientY - rect.top
+
   if (dragData.value.type === "object") {
-    const rect = svgCanvas.value.getBoundingClientRect()
-    const newX = event.clientX - rect.left - dragData.value.offsetX
-    const newY = event.clientY - rect.top - dragData.value.offsetY
+    const newX = mouseX - dragData.value.offsetX
+    const newY = mouseY - dragData.value.offsetY
     
     const halfWidth = objectWidth / 2
     const halfHeight = objectHeight / 2
@@ -254,21 +296,87 @@ const onMouseMove = (event) => {
     const constrainedY = Math.max(halfHeight, Math.min(canvasSize - halfHeight, newY))
     
     store.updateObjectPosition(dragData.value.object.id, constrainedX, constrainedY)
+  } else if (dragData.value.type === "system") {
+    const newX = mouseX - dragData.value.offsetX
+    const newY = mouseY - dragData.value.offsetY
+    
+    // Add boundary constraints
+    systemBoundary.value.x = Math.max(0, Math.min(canvasSize - systemBoundary.value.width, newX))
+    systemBoundary.value.y = Math.max(0, Math.min(canvasSize - systemBoundary.value.height, newY))
+  } else if (dragData.value.type === "resize") {
+    const orig = dragData.value.originalBoundary
+    const dx = mouseX - dragData.value.startX
+    const dy = mouseY - dragData.value.startY
+
+    switch (resizeHandle.value) {
+      case 'se':  // Southeast
+        const newWidthSE = Math.max(50, Math.min(orig.width + dx, canvasSize - orig.x))
+        const newHeightSE = Math.max(50, Math.min(orig.height + dy, canvasSize - orig.y))
+        systemBoundary.value.width = newWidthSE
+        systemBoundary.value.height = newHeightSE
+        break
+        
+      case 'sw':  // Southwest
+        const newWidthSW = Math.max(50, orig.width - dx)
+        const newXSW = Math.min(orig.x + dx, orig.x + orig.width - 50)
+        const newHeightSW = Math.max(50, Math.min(orig.height + dy, canvasSize - orig.y))
+        
+        systemBoundary.value.width = newWidthSW
+        systemBoundary.value.x = Math.max(0, newXSW)
+        systemBoundary.value.height = newHeightSW
+        break
+        
+      case 'ne':  // Northeast
+        const newWidthNE = Math.max(50, Math.min(orig.width + dx, canvasSize - orig.x))
+        const newHeightNE = Math.max(50, orig.height - dy)
+        const newYNE = Math.min(orig.y + dy, orig.y + orig.height - 50)
+        
+        systemBoundary.value.width = newWidthNE
+        systemBoundary.value.height = newHeightNE
+        systemBoundary.value.y = Math.max(0, newYNE)
+        break
+        
+      case 'nw':  // Northwest
+        const newWidthNW = Math.max(50, orig.width - dx)
+        const newXNW = Math.min(orig.x + dx, orig.x + orig.width - 50)
+        const newHeightNW = Math.max(50, orig.height - dy)
+        const newYNW = Math.min(orig.y + dy, orig.y + orig.height - 50)
+        
+        systemBoundary.value.width = newWidthNW
+        systemBoundary.value.x = Math.max(0, newXNW)
+        systemBoundary.value.height = newHeightNW
+        systemBoundary.value.y = Math.max(0, newYNW)
+        break
+    }
   }
 }
 
 const onMouseUp = () => {
   dragData.value = null
+  isResizing.value = false
+  resizeHandle.value = null
+}
+
+const onKeyDown = (event) => {
+  console.log('Key pressed:', event.key, 'System selected:', isSystemSelected.value)
+  if (event.key === 'Delete' || event.key === 'Backspace') {
+    if (isSystemSelected.value && systemBoundary.value) {
+      systemBoundary.value = null
+      isSystemSelected.value = false
+    }
+  }
 }
 
 onMounted(() => {
   window.addEventListener("mousemove", onMouseMove)
   window.addEventListener("mouseup", onMouseUp)
+  window.addEventListener("keydown", onKeyDown)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener("mousemove", onMouseMove)
   window.removeEventListener("mouseup", onMouseUp)
+  window.removeEventListener("keydown", onKeyDown)
 })
 
 const renderKatex = (text) => {
@@ -280,6 +388,43 @@ const renderKatex = (text) => {
   } catch (e) {
     console.error('KaTeX error:', e);
     return text;
+  }
+}
+
+const addSystemBoundary = () => {
+  systemBoundary.value = {
+    x: canvasSize / 4,
+    y: canvasSize / 4,
+    width: canvasSize / 2,
+    height: canvasSize / 2,
+    isSelected: false
+  }
+}
+
+const onSystemBoundaryMouseDown = (event) => {
+  if (!systemBoundary.value) return
+  
+  isSystemSelected.value = true
+  const rect = svgCanvas.value.getBoundingClientRect()
+  dragData.value = {
+    type: "system",
+    offsetX: event.clientX - rect.left - systemBoundary.value.x,
+    offsetY: event.clientY - rect.top - systemBoundary.value.y
+  }
+}
+
+const onResizeHandleMouseDown = (event, handle) => {
+  event.stopPropagation()
+  if (!systemBoundary.value) return
+
+  const rect = svgCanvas.value.getBoundingClientRect()
+  isResizing.value = true
+  resizeHandle.value = handle
+  dragData.value = {
+    type: "resize",
+    startX: event.clientX - rect.left,
+    startY: event.clientY - rect.top,
+    originalBoundary: { ...systemBoundary.value }
   }
 }
 </script>
@@ -324,6 +469,8 @@ input:focus {
   display: flex;
   gap: 8px;
   align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .ml-4 {
