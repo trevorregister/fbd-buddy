@@ -2,6 +2,8 @@
   <v-app>
     <MenuBar />
     <v-main>
+      <InstructionPanel :currentTab="activeTab" />
+      
       <v-container>
         <v-row>
           <SettingsModal @save-settings="handleSaveSettings"/>
@@ -104,6 +106,7 @@ import { useAnimate } from '@vueuse/core'
 import AnimationOverlay from '~/components/AnimationOverlay.vue'
 import FreeBodyDiagram from '~/components/FreeBodyDiagram.vue'
 import { useForceVectorsStore } from '~/stores/forceVectors'
+import InstructionPanel from '~/components/InstructionPanel.vue'
 
 const showComponents = ref(false) 
 const hideGrid = ref(false)
@@ -221,6 +224,18 @@ const coordinateSystem = ref('cartesian')
 const updateCoordinateSystem = (newSystem) => {
   coordinateSystem.value = newSystem
 }
+
+const currentTab = ref('interaction')
+
+watch(activeTab, (newTab) => {
+  if (newTab === 'forceTable') {
+    currentTab.value = 'fbd'
+  } else if (newTab === 'forceAddition') {
+    currentTab.value = 'addition'
+  } else {
+    currentTab.value = newTab
+  }
+})
 </script>
 
 <style scoped>
@@ -287,5 +302,14 @@ body{
 .button-container {
   display: flex;
   justify-content: center;
+}
+
+.v-main {
+  position: relative;
+}
+
+.v-container {
+  max-width: calc(100% - 240px) !important; /* 200px panel + 40px tab */
+  margin-right: 240px;
 }
 </style>
