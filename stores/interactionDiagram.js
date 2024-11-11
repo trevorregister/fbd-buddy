@@ -16,22 +16,19 @@ export const useInteractionDiagramStore = defineStore('interactionDiagram', {
       }),
 
       actions: {
-            addObject(x, y) {
+            addObject(x, y, label = "Object") {
                   try {
-                        console.log('Store: Adding new object at', x, y)
                         const newObject = {
                               id: Date.now(),
                               x,
                               y,
-                              label: "Object",
+                              label: label,
                               selected: false,
                               isEditing: false,
                         }
-                        console.log('New object:', newObject)
-                        this.objects.push(newObject)
-                        console.log('Updated objects:', this.objects)
+                        this.objects.push({ ...newObject })
                   } catch (error) {
-                        console.error('Error in store addObject:', error)
+                        // Keep error handling without console.error
                   }
             },
 
@@ -98,7 +95,6 @@ export const useInteractionDiagramStore = defineStore('interactionDiagram', {
             },
 
             deleteObject(id) {
-                  console.log('Store deleteObject called with id:', id)
                   this.objects = this.objects.filter(obj => obj.id !== id)
                   this.selectedObjects = this.selectedObjects.filter(obj => obj.id !== id)
             },

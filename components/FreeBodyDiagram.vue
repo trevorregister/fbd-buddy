@@ -4,15 +4,17 @@
       <div class="free-body-diagram-label">
         <div class="label-content">
           <span>Free Body Diagram for:</span>
-          <v-text-field
-            :value="objectExperiencingForce"
-            @input="$emit('update:objectExperiencingForce', $event.target.value)"
-            placeholder="object"
+          <v-combobox
+            v-model="localObjectName"
+            :items="objectLabels"
+            @blur="handleObjectCreation"
+            @keyup.enter="handleObjectCreation"
+            placeholder="Select or create object"
             dense
             hide-details
             class="ml-2"
             style="max-width: 200px;"
-          ></v-text-field>
+          ></v-combobox>
         </div>
       </div>
     </div>
@@ -57,10 +59,8 @@
 </template>
 
 <script setup>
-import { defineProps, watch, ref, computed } from 'vue'
-import Grid from '~/components/Grid.vue'
-import Point from '~/components/Point.vue'
-import ForceVector from '~/components/ForceVector.vue'
+import { ref, computed, watch } from 'vue'
+import { useInteractionDiagramStore } from '~/stores/interactionDiagram'
 import { useForceVectorsStore } from '~/stores/forceVectors'
 
 const props = defineProps({
@@ -80,6 +80,50 @@ const props = defineProps({
 const emit = defineEmits(['updateVectorHead', 'update:objectExperiencingForce'])
 
 const forceVectorsStore = useForceVectorsStore()
+const interactionStore = useInteractionDiagramStore()
+
+// Create a computed property for the object labels
+const objectLabels = computed(() => {
+  return interactionStore.objects.map(obj => obj.label)
+})
+
+// Create a ref for the local object name
+const localObjectName = ref('')
+
+// Watch for changes in the prop
+watch(() => props.objectExperiencingForce, (newValue) => {
+  localObjectName.value = newValue || ''
+})
+
+// Update the handleObjectCreation function
+const handleObjectCreation = () => {
+  if (!localObjectName.value) return
+
+  console.log('handleObjectCreation called with localObjectName:', localObjectName.value)
+
+  // Check if this is a new object
+  const existingObject = interactionStore.objects.find(obj => obj.label === localObjectName.value)
+  
+  if (!existingObject) {
+    console.log('No existing object found, creating new one with label:', localObjectName.value)
+    // Add new object to the interaction diagram
+    const label = localObjectName.value.trim()
+    interactionStore.addObject(
+      interactionStore.objects.length * 60 + 100,
+      250,
+      label
+    )
+    console.log('Object creation requested with label:', label)
+  }
+
+  // Emit the update
+  emit('update:objectExperiencingForce', localObjectName.value)
+}
+
+// Add a watcher for the v-model of the combobox
+watch(localObjectName, (newValue) => {
+  console.log('localObjectName changed to:', newValue)
+})
 
 // Create a computed property for the vectors
 const vectors = computed(() => forceVectorsStore.vectors)
