@@ -22,6 +22,28 @@
           :fill="object.selected ? 'lightblue' : 'white'"
           stroke="black"
         />
+        <g v-if="object.selected" 
+           @mousedown.stop
+           @click="deleteObject(object.id)"
+           style="cursor: pointer;"
+           :transform="`translate(${objectWidth/2}, ${-objectHeight/2})`"
+        >
+          <circle
+            r="8"
+            fill="#ff4444"
+            stroke="#cc0000"
+            stroke-width="1"
+          />
+          <text
+            x="0"
+            y="1"
+            text-anchor="middle"
+            alignment-baseline="middle"
+            fill="white"
+            font-size="12"
+            font-weight="bold"
+          >×</text>
+        </g>
         <foreignObject
           :x="-objectWidth/2"
           :y="-objectHeight/2"
@@ -103,7 +125,7 @@
     </svg>
 
     <div class="button-container">
-      <v-btn @click="addNewObject" class="mr-4">+ Object</v-btn>
+      <v-btn @click.prevent="addNewObject" class="mr-4">+ Object</v-btn>
       <v-btn @click="showInteractionDialog = true" :disabled="store.selectedObjects.length !== 2">
         + Interaction
       </v-btn>
@@ -134,12 +156,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
 import { useInteractionDiagramStore } from '~/stores/interactionDiagram'
+import { storeToRefs } from 'pinia'
 
 const store = useInteractionDiagramStore()
+// Destructure for better reactivity
+const { objects, interactions } = storeToRefs(store)
+
+watch(() => store.objects, (newObjects) => {
+  console.log('Objects updated:', newObjects)
+}, { deep: true })
 
 const canvasSize = 500
 const objectWidth = 60
@@ -155,8 +184,17 @@ const resizeHandle = ref(null)
 const HANDLE_SIZE = 8
 const isSystemSelected = ref(false)
 
-const addNewObject = () => {
-  store.addObject(canvasSize / 2, canvasSize / 2)
+const addNewObject = (event) => {
+  try {
+    console.log('Adding new object')
+    // Prevent any default behavior
+    event?.preventDefault()
+    // Add the object at the center of the canvas
+    store.addObject(canvasSize / 2, canvasSize / 2)
+    console.log('Current objects:', objects.value)
+  } catch (error) {
+    console.error('Error adding object:', error)
+  }
 }
 
 const startEditing = (object) => {
@@ -426,6 +464,21 @@ const onResizeHandleMouseDown = (event, handle) => {
     startY: event.clientY - rect.top,
     originalBoundary: { ...systemBoundary.value }
   }
+}
+
+const deleteObject = (id) => {
+  console.log('Delete button clicked for object:', id)
+  console.log('Objects before delete:', objects.value)
+  
+  // Stop event propagation
+  event?.stopPropagation()
+  
+  store.deleteInteractionsForObject(id)
+  store.deleteObject(id)
+  
+  nextTick(() => {
+    console.log('Objects after delete:', objects.value)
+  })
 }
 </script>
 

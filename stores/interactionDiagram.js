@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { ref } from 'vue'
 
 export const useInteractionDiagramStore = defineStore('interactionDiagram', {
       state: () => ({
@@ -14,33 +15,24 @@ export const useInteractionDiagramStore = defineStore('interactionDiagram', {
             ]
       }),
 
-      getters: {
-            getInteractionsBetween: (state) => (obj1Id, obj2Id) => {
-                  return state.interactions.filter(interaction =>
-                        (interaction.fromObjectId === obj1Id && interaction.toObjectId === obj2Id) ||
-                        (interaction.fromObjectId === obj2Id && interaction.toObjectId === obj1Id)
-                  )
-            },
-
-            getInteractionCount: (state) => (obj1Id, obj2Id) => {
-                  return state.interactions.filter(interaction =>
-                        (interaction.fromObjectId === obj1Id && interaction.toObjectId === obj2Id) ||
-                        (interaction.fromObjectId === obj2Id && interaction.toObjectId === obj1Id)
-                  ).length
-            }
-      },
-
       actions: {
             addObject(x, y) {
-                  const newObject = {
-                        id: Date.now(),
-                        x,
-                        y,
-                        label: "Object",
-                        selected: false,
-                        isEditing: false,
+                  try {
+                        console.log('Store: Adding new object at', x, y)
+                        const newObject = {
+                              id: Date.now(),
+                              x,
+                              y,
+                              label: "Object",
+                              selected: false,
+                              isEditing: false,
+                        }
+                        console.log('New object:', newObject)
+                        this.objects.push(newObject)
+                        console.log('Updated objects:', this.objects)
+                  } catch (error) {
+                        console.error('Error in store addObject:', error)
                   }
-                  this.objects.push(newObject)
             },
 
             updateObjectPosition(id, x, y) {
@@ -71,9 +63,7 @@ export const useInteractionDiagramStore = defineStore('interactionDiagram', {
             },
 
             setObjectEditing(id, isEditing) {
-                  // First set all objects to not editing
                   this.objects.forEach(obj => obj.isEditing = false)
-                  // Then set the specified object's editing state
                   const object = this.objects.find(obj => obj.id === id)
                   if (object) {
                         object.isEditing = isEditing
@@ -89,15 +79,11 @@ export const useInteractionDiagramStore = defineStore('interactionDiagram', {
                   if (this.selectedObjects.length !== 2) return
 
                   const [obj1, obj2] = this.selectedObjects
-
-                  // Check if this exact interaction type already exists between these objects
                   const existingInteractions = this.getInteractionsBetween(obj1.id, obj2.id)
                   const hasExactInteraction = existingInteractions.some(i => i.label === label)
 
-                  // Only add if this exact interaction doesn't already exist
                   if (!hasExactInteraction) {
                         const existingCount = this.getInteractionCount(obj1.id, obj2.id)
-
                         const newInteraction = {
                               id: Date.now(),
                               fromObjectId: obj1.id,
@@ -109,6 +95,30 @@ export const useInteractionDiagramStore = defineStore('interactionDiagram', {
                   }
 
                   this.clearSelection()
+            },
+
+            deleteObject(id) {
+                  console.log('Store deleteObject called with id:', id)
+                  this.objects = this.objects.filter(obj => obj.id !== id)
+                  this.selectedObjects = this.selectedObjects.filter(obj => obj.id !== id)
+            },
+
+            deleteInteractionsForObject(objectId) {
+                  this.interactions = this.interactions.filter(interaction =>
+                        interaction.fromObjectId !== objectId &&
+                        interaction.toObjectId !== objectId
+                  )
+            },
+
+            getInteractionsBetween(obj1Id, obj2Id) {
+                  return this.interactions.filter(interaction =>
+                        (interaction.fromObjectId === obj1Id && interaction.toObjectId === obj2Id) ||
+                        (interaction.fromObjectId === obj2Id && interaction.toObjectId === obj1Id)
+                  )
+            },
+
+            getInteractionCount(obj1Id, obj2Id) {
+                  return this.getInteractionsBetween(obj1Id, obj2Id).length
             }
       }
 }) 
