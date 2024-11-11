@@ -4,6 +4,7 @@
       <thead>
         <tr>
           <th>Force Label</th>
+          <th>Type</th>
           <th>Object Exerting Force</th>
           <th>Components</th>
           <th>Actions</th>
@@ -32,6 +33,18 @@
               class="math-container"
               v-html="renderKatex(vector.name)"
             ></div>
+          </td>
+          <td>
+            <v-select
+              v-model="vector.type"
+              :items="interactionDiagramStore.interactionTypes"
+              item-title="text"
+              item-value="value"
+              :hide-details="true"
+              density="compact"
+              variant="outlined"
+              @update:model-value="updateForceType(vector.id, $event)"
+            />
           </td>
           <td>
             <v-combobox
@@ -242,9 +255,9 @@ const formatComponent = (value, includeUnit = true) => {
 const addForce = () => {
   const newVector = {
     id: Date.now(),
-    name: `F_${forceVectorsStore.vectors.length + 1}`,
+    name: `\\vec{F}_{${forceVectorsStore.vectors.length + 1}}`,
+    type: '\\vec{F}_g',
     objectExertingForce: '',
-    type: 'Force',
     tail: { x: 0, y: 0 },
     head: { x: 200, y: 200 }
   }
@@ -345,6 +358,15 @@ const getNetAngle = () => {
 watch(coordinateSystem, (newValue) => {
   emit('updateCoordinateSystem', newValue)
 })
+
+const updateForceType = (vectorId, newType) => {
+  const vector = forceVectorsStore.vectors.find(v => v.id === vectorId)
+  if (vector) {
+    // Update the vector's name based on the selected type
+    const newName = newType // The type already includes the LaTeX formatting
+    forceVectorsStore.updateVectorName(vectorId, newName)
+  }
+}
 </script>
 
 <style scoped>
@@ -413,5 +435,15 @@ watch(coordinateSystem, (newValue) => {
 
 :deep(.katex-html) {
   white-space: nowrap;
+}
+
+.v-table th:nth-child(1),
+.v-table td:nth-child(1) {
+  width: 120px;
+}
+
+.v-table th:nth-child(2),
+.v-table td:nth-child(2) {
+  width: 150px;
 }
 </style>

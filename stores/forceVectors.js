@@ -57,5 +57,11 @@ export const useForceVectorsStore = defineStore('forceVectors', {
                         vector.name = newName
                   }
             },
+            updateVectorType(id, newType) {
+                  const vector = this.vectors.find(v => v.id === id)
+                  if (vector) {
+                        vector.type = newType
+                  }
+            },
       },
 });
