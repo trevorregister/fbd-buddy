@@ -255,8 +255,8 @@ const formatComponent = (value, includeUnit = true) => {
 const addForce = () => {
   const newVector = {
     id: Date.now(),
-    name: `\\vec{F}_{${forceVectorsStore.vectors.length + 1}}`,
-    type: '\\vec{F}_g',
+    name: 'F_g',
+    type: 'F_g',
     objectExertingForce: '',
     tail: { x: 0, y: 0 },
     head: { x: 200, y: 200 }
@@ -362,9 +362,15 @@ watch(coordinateSystem, (newValue) => {
 const updateForceType = (vectorId, newType) => {
   const vector = forceVectorsStore.vectors.find(v => v.id === vectorId)
   if (vector) {
-    // Update the vector's name based on the selected type
-    const newName = newType // The type already includes the LaTeX formatting
-    forceVectorsStore.updateVectorName(vectorId, newName)
+    // Strip the LaTeX vector notation for the type
+    const cleanType = newType
+      .replace('\\vec{', '')
+      .replace('}', '')
+      .replace('\\', '')
+
+    // Update both the type and name
+    forceVectorsStore.updateVectorType(vectorId, cleanType)
+    forceVectorsStore.updateVectorName(vectorId, cleanType)
   }
 }
 </script>
