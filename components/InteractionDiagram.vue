@@ -17,8 +17,8 @@
         @mousedown.stop.prevent="onObjectMouseDown($event, object)"
       >
         <ellipse
-          :rx="objectWidth / 2"
-          :ry="objectHeight / 2"
+          :rx="getObjectWidth(object) / 2"
+          :ry="getObjectHeight(object) / 2"
           :fill="object.selected ? 'lightblue' : 'white'"
           stroke="black"
         />
@@ -26,7 +26,7 @@
            @mousedown.stop
            @click="deleteObject(object.id)"
            style="cursor: pointer;"
-           :transform="`translate(${objectWidth/2}, ${-objectHeight/2})`"
+           :transform="`translate(${getObjectWidth(object)/2}, ${-getObjectHeight(object)/2})`"
         >
           <circle
             r="8"
@@ -45,10 +45,10 @@
           >×</text>
         </g>
         <foreignObject
-          :x="-objectWidth/2"
-          :y="-objectHeight/2"
-          :width="objectWidth"
-          :height="objectHeight"
+          :x="-getObjectWidth(object)/2"
+          :y="-getObjectHeight(object)/2"
+          :width="getObjectWidth(object)"
+          :height="getObjectHeight(object)"
           @dblclick.stop="startEditing(object)"
         >
           <div xmlns="http://www.w3.org/1999/xhtml"
@@ -264,8 +264,8 @@ const getEllipseEdgePoint = (fromObject, toObject) => {
   const dy = toObject.y - fromObject.y;
   const angle = Math.atan2(dy, dx);
 
-  const rx = objectWidth / 2;
-  const ry = objectHeight / 2;
+  const rx = getObjectWidth(fromObject) / 2;
+  const ry = getObjectHeight(fromObject) / 2;
 
   const edgeX = fromObject.x + rx * Math.cos(angle);
   const edgeY = fromObject.y + ry * Math.sin(angle);
@@ -480,6 +480,37 @@ const deleteObject = (id) => {
     console.log('Objects after delete:', objects.value)
   })
 }
+
+// Update the getObjectDimensions function to add more horizontal padding
+const getObjectDimensions = (object) => {
+  // Create a temporary span to measure text width
+  const span = document.createElement('span')
+  span.style.visibility = 'hidden'
+  span.style.position = 'absolute'
+  span.style.fontSize = '14px' // Match your text size
+  span.innerText = object.label
+  document.body.appendChild(span)
+  
+  // Get dimensions and add padding
+  const width = Math.max(60, span.offsetWidth + 40) // Increased horizontal padding to 40px (20px on each side)
+  const height = Math.max(40, span.offsetHeight + 16) // Keep vertical padding the same
+  
+  // Clean up
+  document.body.removeChild(span)
+  
+  return { width, height }
+}
+
+// Replace the fixed objectWidth and objectHeight with computed values
+const getObjectWidth = (object) => {
+  return getObjectDimensions(object).width
+}
+
+const getObjectHeight = (object) => {
+  return getObjectDimensions(object).height
+}
+
+// Update template references to use the new dynamic dimensions
 </script>
 
 <style scoped>
