@@ -53,7 +53,9 @@
               :hide-details="true"
               density="compact"
               variant="outlined"
-              @update:model-value="updateObjectExertingForce(vector.id, $event)"
+              @blur="handleObjectCreation($event, vector.id)"
+              @keyup.enter="handleObjectCreation($event, vector.id)"
+              placeholder="Select or create object"
             />
           </td>
           <td>
@@ -127,16 +129,25 @@
           <td style="color: red;">
             <div class="math-container" v-html="renderKatex('F_{net}')"></div>
           </td>
+          <td></td>
           <td>{{ objectExperiencingForce }}</td>
           <td>
             <div class="components">
               <template v-if="coordinateSystem === 'cartesian'">
-                <div>x: {{ formatComponent(getNetXComponent()) }}</div>
-                <div>y: {{ formatComponent(getNetYComponent()) }}</div>
+                <div class="component-input">
+                  x: <span class="net-force-value">{{ formatComponent(getNetXComponent()) }}</span>
+                </div>
+                <div class="component-input">
+                  y: <span class="net-force-value">{{ formatComponent(getNetYComponent()) }}</span>
+                </div>
               </template>
               <template v-else>
-                <div>r: {{ formatComponent(getNetMagnitude()) }}</div>
-                <div>θ: {{ getNetAngle().toFixed(2) }}°</div>
+                <div class="component-input">
+                  r: <span class="net-force-value">{{ formatComponent(getNetMagnitude()) }}</span>
+                </div>
+                <div class="component-input">
+                  θ: <span class="net-force-value">{{ getNetAngle().toFixed(2) }}°</span>
+                </div>
               </template>
             </div>
           </td>
@@ -373,6 +384,28 @@ const updateForceType = (vectorId, newType) => {
     forceVectorsStore.updateVectorName(vectorId, cleanType)
   }
 }
+
+// Add the handleObjectCreation function
+const handleObjectCreation = (event, vectorId) => {
+  const newObjectName = event?.target?.value || event
+  if (!newObjectName) return
+
+  // Check if this is a new object
+  const existingObject = interactionDiagramStore.objects.find(obj => obj.label === newObjectName)
+  
+  if (!existingObject) {
+    // Add new object to the interaction diagram
+    const label = newObjectName.trim()
+    interactionDiagramStore.addObject(
+      interactionDiagramStore.objects.length * 60 + 100, // Space objects horizontally
+      250, // Center vertically
+      label
+    )
+  }
+
+  // Update the force vector's objectExertingForce
+  forceVectorsStore.updateObjectExertingForce(vectorId, newObjectName)
+}
 </script>
 
 <style scoped>
@@ -451,5 +484,11 @@ const updateForceType = (vectorId, newType) => {
 .v-table th:nth-child(2),
 .v-table td:nth-child(2) {
   width: 150px;
+}
+
+.net-force-value {
+  font-weight: bold;
+  color: red;
+  padding: 0 4px;
 }
 </style>

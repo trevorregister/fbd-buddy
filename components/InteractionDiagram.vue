@@ -49,7 +49,7 @@
           :y="-getObjectHeight(object)/2"
           :width="getObjectWidth(object)"
           :height="getObjectHeight(object)"
-          @dblclick.stop="startEditing(object)"
+          @dblclick.stop.prevent="startEditing(object)"
         >
           <div xmlns="http://www.w3.org/1999/xhtml"
                style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
@@ -61,7 +61,7 @@
                    ref="editInput"
                    type="text"
             />
-            <span v-else>{{ object.label }}</span>
+            <span v-else @dblclick.stop.prevent="startEditing(object)">{{ object.label }}</span>
           </div>
         </foreignObject>
       </g>
@@ -198,16 +198,28 @@ const addNewObject = (event) => {
 }
 
 const startEditing = (object) => {
+  // Prevent event propagation
+  event?.stopPropagation()
+  event?.preventDefault()
+  
   store.setObjectEditing(object.id, true)
   nextTick(() => {
-    if (editInput.value && editInput.value.length > 0) {
-      editInput.value[0].focus()
-      editInput.value[0].select()
+    if (editInput.value) {
+      const input = Array.isArray(editInput.value) 
+        ? editInput.value[0] 
+        : editInput.value
+      if (input) {
+        input.focus()
+        input.select()
+      }
     }
   })
 }
 
 const stopEditing = (object) => {
+  if (!object.label.trim()) {
+    object.label = 'Object' // Prevent empty labels
+  }
   store.setObjectEditing(object.id, false)
   store.updateObjectLabel(object.id, object.label)
 }
