@@ -5,6 +5,7 @@
         <tr>
           <th>Force Label</th>
           <th>Type</th>
+          <th>Object Experiencing Force</th>
           <th>Object Exerting Force</th>
           <th>Components</th>
           <th>Actions</th>
@@ -47,12 +48,17 @@
             />
           </td>
           <td>
+            <div class="experiencing-force">
+              {{ objectExperiencingForce }}
+            </div>
+          </td>
+          <td>
             <v-combobox
               v-model="vector.objectExertingForce"
               :items="interactionDiagramStore.objects.map(obj => obj.label)"
               :hide-details="true"
-              density="compact"
               variant="outlined"
+              class="object-combobox"
               @blur="handleObjectCreation($event, vector.id)"
               @keyup.enter="handleObjectCreation($event, vector.id)"
               placeholder="Select or create object"
@@ -130,7 +136,7 @@
             <div class="math-container" v-html="renderKatex('F_{net}')"></div>
           </td>
           <td></td>
-          <td>{{ objectExperiencingForce }}</td>
+          <td></td>
           <td>
             <div class="components">
               <template v-if="coordinateSystem === 'cartesian'">
@@ -397,20 +403,39 @@ const handleObjectCreation = (event, vectorId) => {
     // Add new object to the interaction diagram
     const label = newObjectName.trim()
     interactionDiagramStore.addObject(
-      interactionDiagramStore.objects.length * 60 + 100, // Space objects horizontally
-      250, // Center vertically
+      interactionDiagramStore.objects.length * 60 + 100,
+      250,
       label
     )
   }
 
   // Update the force vector's objectExertingForce
   forceVectorsStore.updateObjectExertingForce(vectorId, newObjectName)
+
+  // Create an interaction between the objects
+  const vector = forceVectorsStore.vectors.find(v => v.id === vectorId)
+  if (vector && vector.type && props.objectExperiencingForce) {
+    // Find or create the interaction
+    const obj1 = interactionDiagramStore.objects.find(obj => obj.label === props.objectExperiencingForce)
+    const obj2 = interactionDiagramStore.objects.find(obj => obj.label === newObjectName)
+    
+    if (obj1 && obj2) {
+      // Check if this interaction already exists
+      const existingInteractions = interactionDiagramStore.getInteractionsBetween(obj1.id, obj2.id)
+      const hasExactInteraction = existingInteractions.some(i => i.label === vector.type)
+
+      if (!hasExactInteraction) {
+        // Create new interaction with the force type
+        interactionDiagramStore.addInteraction(vector.type, obj1.id, obj2.id)
+      }
+    }
+  }
 }
 </script>
 
 <style scoped>
 .force-table {
-  padding: 16px;
+  padding: 8px;
 }
 
 .button-container {
@@ -439,7 +464,7 @@ const handleObjectCreation = (event, vectorId) => {
   align-items: center;
   gap: 8px;
   margin: 4px 0;
-  min-width: 140px; /* Increased to accommodate unit label */
+  min-width: 50px; /* Reduced from 180px */
 }
 
 .unit-label {
@@ -449,15 +474,16 @@ const handleObjectCreation = (event, vectorId) => {
 }
 
 .component-field {
-  width: 80px;
+  width: 50px; /* Reduced from 120px */
   margin: 0;
 }
 
-/* Override Vuetify's default padding */
-:deep(.v-field__input) {
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
+/* Hide the number input spinners */
+:deep(.v-field__input input[type="number"]) {
+  -moz-appearance: textfield; /* Firefox */
 }
+
+
 
 .highlighted-row {
   background-color: rgba(76, 175, 80, 0.1) !important; /* Light green with transparency */
@@ -466,29 +492,90 @@ const handleObjectCreation = (event, vectorId) => {
 .math-container {
   cursor: text;
   padding: 4px 8px;
+  font-size: 16px; /* Increased from 14px */
 }
 
 :deep(.katex) {
-  font-size: 1.1em;
+  font-size: 1.3em !important; /* Increased from 1.1em */
 }
 
 :deep(.katex-html) {
   white-space: nowrap;
 }
 
-.v-table th:nth-child(1),
-.v-table td:nth-child(1) {
-  width: 120px;
-}
-
-.v-table th:nth-child(2),
-.v-table td:nth-child(2) {
-  width: 150px;
-}
 
 .net-force-value {
   font-weight: bold;
   color: red;
   padding: 0 4px;
+}
+
+
+
+ 
+
+
+
+.object-combobox{
+    width: 100px;
+}
+
+/* Style for the experiencing force cell */
+.experiencing-force {
+  padding: 4px 8px;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+/* Simplified table cell styling */
+.v-table th,
+.v-table td {
+  padding: 4px 8px !important;
+  vertical-align: middle !important;
+}
+
+/* Only keep specific widths where needed */
+.v-table td:first-child {
+  width: 120px; /* Increased from 100px */
+}
+
+/* Make the label input field match the size */
+:deep(.v-text-field input) {
+  font-size: 16px !important;
+  padding: 8px !important;
+}
+
+/* Style for select and combobox inputs */
+:deep(.v-field__input) {
+  padding: 4px 8px !important;
+  min-height: 36px !important;
+  font-size: 14px !important;
+  color: rgba(0, 0, 0, 0.87) !important;
+}
+
+:deep(.v-select__selection),
+:deep(.v-combobox__selection) {
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+/* Style for component inputs */
+.component-input {
+  font-size: 14px !important;
+}
+
+.component-input :deep(.v-field__input) {
+  font-size: 14px !important;
+  min-height: 32px !important;
+}
+
+/* Style for dropdown menu items */
+:deep(.v-list-item__content) {
+  font-size: 14px !important;
+}
+
+/* Adjust unit label size */
+.unit-label {
+  font-size: 14px !important;
 }
 </style>

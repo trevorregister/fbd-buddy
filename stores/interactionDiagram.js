@@ -72,19 +72,25 @@ export const useInteractionDiagramStore = defineStore('interactionDiagram', {
                   this.selectedObjects = []
             },
 
-            addInteraction(label) {
-                  if (this.selectedObjects.length !== 2) return
+            addInteraction(label, fromObjectId, toObjectId) {
+                  // If IDs are provided, use them; otherwise use selected objects
+                  let obj1Id = fromObjectId
+                  let obj2Id = toObjectId
 
-                  const [obj1, obj2] = this.selectedObjects
-                  const existingInteractions = this.getInteractionsBetween(obj1.id, obj2.id)
+                  if (!obj1Id || !obj2Id) {
+                        if (this.selectedObjects.length !== 2) return
+                        [obj1Id, obj2Id] = this.selectedObjects.map(obj => obj.id)
+                  }
+
+                  const existingInteractions = this.getInteractionsBetween(obj1Id, obj2Id)
                   const hasExactInteraction = existingInteractions.some(i => i.label === label)
 
                   if (!hasExactInteraction) {
-                        const existingCount = this.getInteractionCount(obj1.id, obj2.id)
+                        const existingCount = this.getInteractionCount(obj1Id, obj2Id)
                         const newInteraction = {
                               id: Date.now(),
-                              fromObjectId: obj1.id,
-                              toObjectId: obj2.id,
+                              fromObjectId: obj1Id,
+                              toObjectId: obj2Id,
                               label,
                               arcHeight: 50 + (existingCount * 30)
                         }
