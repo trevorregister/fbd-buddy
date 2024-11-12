@@ -132,9 +132,12 @@
         </tr>
         <!-- Net Force Row -->
         <tr class="net-force-row">
-          <td style="color: red;">
-            <div class="math-container" v-html="renderKatex('F_{net}')"></div>
+          <td>
+            <div class="math-container" style="color: red;">
+              <span v-html="renderKatex('F_{net}')"></span>
+            </div>
           </td>
+          <td></td>
           <td></td>
           <td></td>
           <td>
@@ -142,17 +145,21 @@
               <template v-if="coordinateSystem === 'cartesian'">
                 <div class="component-input">
                   x: <span class="net-force-value">{{ formatComponent(getNetXComponent()) }}</span>
+                  <span class="unit-label">N</span>
                 </div>
                 <div class="component-input">
                   y: <span class="net-force-value">{{ formatComponent(getNetYComponent()) }}</span>
+                  <span class="unit-label">N</span>
                 </div>
               </template>
               <template v-else>
                 <div class="component-input">
                   r: <span class="net-force-value">{{ formatComponent(getNetMagnitude()) }}</span>
+                  <span class="unit-label">N</span>
                 </div>
                 <div class="component-input">
                   θ: <span class="net-force-value">{{ getNetAngle().toFixed(2) }}°</span>
+                  <span class="unit-label">°</span>
                 </div>
               </template>
             </div>
@@ -262,7 +269,7 @@ const getNetYComponent = () => {
   )
 }
 
-const formatComponent = (value, includeUnit = true) => {
+const formatComponent = (value, includeUnit = false) => {
   if (!includeUnit) return value.toFixed(2)
   return value.toString().includes('°') 
     ? value.toFixed(2) + '°'
@@ -455,22 +462,29 @@ const handleObjectCreation = (event, vectorId) => {
   background-color: rgba(0, 0, 0, 0.03);
 }
 
+.net-force-row::before {
+  display: none;
+}
+
+.net-force-row > td {
+  position: relative;
+  z-index: 1;
+}
+
 .components {
   font-family: monospace;
 }
 
 .component-input {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   margin: 4px 0;
-  min-width: 50px; /* Reduced from 180px */
 }
 
 .unit-label {
+  font-size: 14px !important;
   color: rgba(0, 0, 0, 0.6);
-  font-size: 0.9em;
-  min-width: 15px;
 }
 
 .component-field {
@@ -578,4 +592,36 @@ const handleObjectCreation = (event, vectorId) => {
 .unit-label {
   font-size: 14px !important;
 }
+
+
+
+.net-force-row .unit-label {
+  color: red !important; /* Change the color to red */
+}
+
+/* Keep the net-force-row background */
+.net-force-row {
+  font-weight: bold;
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Make just the math container background transparent */
+.net-force-row .math-container {
+  background-color: transparent;
+  text-align: left;
+  padding-left: 0; /* Remove left padding to align with other cells */
+}
+
+/* Add specific styling for the Fnet katex container */
+.net-force-row .math-container :deep(.katex-html) {
+  text-align: left;
+  justify-content: flex-start;
+}
+
+/* Keep the relative positioning on cells */
+.net-force-row > td {
+  position: relative;
+  z-index: 1;
+}
+
 </style>

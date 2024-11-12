@@ -10,11 +10,25 @@
             @blur="handleObjectCreation"
             @keyup.enter="handleObjectCreation"
             placeholder="Select or create object"
+            :error="!localObjectName"
+            :error-messages="!localObjectName ? 'Required' : ''"
+            :hint="!localObjectName ? 'Please select or type an object' : ''"
+            :persistent-hint="!localObjectName"
             dense
-            hide-details
-            class="ml-2"
+            hide-details="auto"
+            class="ml-2 object-input"
             style="max-width: 200px;"
-          ></v-combobox>
+          >
+            <template v-slot:prepend-inner>
+              <v-tooltip
+                activator="parent"
+                location="bottom"
+                :open-on-hover="!localObjectName"
+              >
+                Please select or type an object
+              </v-tooltip>
+            </template>
+          </v-combobox>
         </div>
       </div>
     </div>
@@ -232,5 +246,40 @@ const draggedVectorId = ref(null)
 .label-content {
   display: flex;
   align-items: center;
+}
+
+.object-input {
+  font-size: 14px !important;
+  width: 100px !important;
+}
+
+/* Add these styles to reduce the height */
+:deep(.object-input .v-field__input) {
+  min-height: 32px !important;
+  padding: 4px 8px !important;
+}
+
+:deep(.object-input .v-field) {
+  min-height: 32px !important;
+}
+
+:deep(.object-input .v-select__selection),
+:deep(.object-input .v-combobox__selection) {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Style for error state */
+:deep(.object-input.error .v-field) {
+  border-color: rgb(var(--v-theme-error)) !important;
+}
+
+:deep(.object-input .v-field--error) {
+  --v-field-border-width: 2px;
+}
+
+/* Adjust tooltip style */
+:deep(.v-tooltip) {
+  font-size: 14px;
 }
 </style>
