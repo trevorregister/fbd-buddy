@@ -41,7 +41,8 @@
               :items="interactionDiagramStore.interactionTypes"
               item-title="text"
               item-value="value"
-              :hide-details="true"
+              :error="!vector.type"
+              :error-messages="!vector.type ? 'Required' : ''"
               density="compact"
               variant="outlined"
               @update:model-value="updateForceType(vector.id, $event)"
@@ -56,7 +57,8 @@
             <v-combobox
               v-model="vector.objectExertingForce"
               :items="interactionDiagramStore.objects.map(obj => obj.label)"
-              :hide-details="true"
+              :error="!vector.objectExertingForce"
+              :error-messages="!vector.objectExertingForce ? 'Required' : ''"
               variant="outlined"
               class="object-combobox"
               @blur="handleObjectCreation($event, vector.id)"
@@ -622,6 +624,24 @@ const handleObjectCreation = (event, vectorId) => {
 .net-force-row > td {
   position: relative;
   z-index: 1;
+}
+
+/* Update the hover state for regular force rows */
+.v-table tbody tr:not(.net-force-row):hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Make the math container background transparent for regular rows */
+.v-table tbody tr:not(.net-force-row):hover .math-container {
+  background-color: transparent;
+}
+
+/* Remove any hover effects from the math container itself */
+.math-container {
+  cursor: text;
+  padding: 4px 8px;
+  font-size: 16px;
+  background-color: transparent;
 }
 
 </style>
