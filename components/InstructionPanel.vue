@@ -2,7 +2,7 @@
   <div class="instruction-panel" :class="{ 'collapsed': !isOpen }">
     <!-- Tab handle -->
     <div class="panel-tab" @click="togglePanel">
-      <span class="tab-text" :class="{ 'vertical-text': !isOpen }">Instructions</span>
+      <span class="tab-text vertical-text">Instructions</span>
       <v-icon>{{ isOpen ? 'mdi-chevron-right' : 'mdi-chevron-left' }}</v-icon>
     </div>
 
@@ -113,20 +113,19 @@ const currentInstructions = computed(() => {
   border-radius: 8px 0 0 8px;
   cursor: pointer;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-}
-
-.tab-text {
-  font-size: 14px;
-  font-weight: 500;
 }
 
 .vertical-text {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   transform: rotate(180deg);
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .panel-content {
