@@ -7,10 +7,10 @@ export const useInteractionDiagramStore = defineStore('interactionDiagram', {
             interactions: [],
             selectedObjects: [],
             interactionTypes: [
-                  { text: 'Gravitational', value: '\\vec{F}_g' },
-                  { text: 'Electrostatic', value: '\\vec{F}_e' },
-                  { text: 'Magnetic', value: '\\vec{F}_m' },
-                  { text: 'Normal', value: '\\vec{F}_N' },
+                  { text: 'Gravitational', value: '\\vec{F}_{g}' },
+                  { text: 'Electrostatic', value: '\\vec{F}_{e}' },
+                  { text: 'Magnetic', value: '\\vec{F}_{m}' },
+                  { text: 'Normal', value: '\\vec{F}_{N}' },
                   { text: 'Frictional', value: '\\vec{f}' }
             ]
       }),
@@ -73,7 +73,6 @@ export const useInteractionDiagramStore = defineStore('interactionDiagram', {
             },
 
             addInteraction(label, fromObjectId, toObjectId) {
-                  // If IDs are provided, use them; otherwise use selected objects
                   let obj1Id = fromObjectId
                   let obj2Id = toObjectId
 
@@ -82,8 +81,16 @@ export const useInteractionDiagramStore = defineStore('interactionDiagram', {
                         [obj1Id, obj2Id] = this.selectedObjects.map(obj => obj.id)
                   }
 
+                  const fromObject = this.objects.find(obj => obj.id === obj1Id)
+                  const toObject = this.objects.find(obj => obj.id === obj2Id)
+
+                  const forceBase = label.split('_')[0]
+                  const forceType = label.split('_')[1]?.replace('}', '')
+
+                  const newLabel = `${forceBase}_{${forceType}\\text{(${toObject.label})}}`
+
                   const existingInteractions = this.getInteractionsBetween(obj1Id, obj2Id)
-                  const hasExactInteraction = existingInteractions.some(i => i.label === label)
+                  const hasExactInteraction = existingInteractions.some(i => i.label === newLabel)
 
                   if (!hasExactInteraction) {
                         const existingCount = this.getInteractionCount(obj1Id, obj2Id)
@@ -91,7 +98,7 @@ export const useInteractionDiagramStore = defineStore('interactionDiagram', {
                               id: Date.now(),
                               fromObjectId: obj1Id,
                               toObjectId: obj2Id,
-                              label,
+                              label: newLabel,
                               arcHeight: 50 + (existingCount * 30)
                         }
                         this.interactions.push(newInteraction)

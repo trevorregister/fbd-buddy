@@ -281,11 +281,11 @@ const formatComponent = (value, includeUnit = false) => {
 const addForce = () => {
   const newVector = {
     id: Date.now(),
-    name: 'F_g',
+    name: '\\vec{F}_{g}',
     type: 'F_g',
     objectExertingForce: '',
     tail: { x: 0, y: 0 },
-    head: { x: 200, y: 200 }
+    head: { x: 0, y: -200 }
   }
   forceVectorsStore.addVector(newVector)
 }
@@ -394,13 +394,31 @@ const updateForceType = (vectorId, newType) => {
       .replace('}', '')
       .replace('\\', '')
 
-    // Update both the type and name
+    // Update the type
     forceVectorsStore.updateVectorType(vectorId, cleanType)
-    forceVectorsStore.updateVectorName(vectorId, cleanType)
+    
+    // Create the name with the object if it exists
+    let newName = cleanType
+    if (vector.objectExertingForce) {
+      // Split at underscore and handle cases with or without existing subscript
+      const [base, subscript] = cleanType.split('_')
+      // If there's a subscript, include it with the object name
+      if (subscript) {
+        newName = `\\vec{${base}}_{${subscript}\\text{ (${vector.objectExertingForce})}}`
+      } else {
+        newName = `\\vec{${base}}_{\\text{ (${vector.objectExertingForce})}}`
+      }
+    } else {
+      // If no object, just add the vector notation back
+      newName = `\\vec{${cleanType}}`
+    }
+    
+    // Update the name
+    forceVectorsStore.updateVectorName(vectorId, newName)
   }
 }
 
-// Add the handleObjectCreation function
+// Modify handleObjectCreation to update the force name when object is selected
 const handleObjectCreation = (event, vectorId) => {
   const newObjectName = event?.target?.value || event
   if (!newObjectName) return
@@ -421,20 +439,26 @@ const handleObjectCreation = (event, vectorId) => {
   // Update the force vector's objectExertingForce
   forceVectorsStore.updateObjectExertingForce(vectorId, newObjectName)
 
-  // Create an interaction between the objects
+  // Update the force name with the new object
   const vector = forceVectorsStore.vectors.find(v => v.id === vectorId)
+  if (vector && vector.type) {
+    const [base, subscript] = vector.type.split('_')
+    const newName = subscript 
+      ? `\\vec{${base}}_{${subscript}\\text{ (${newObjectName})}}`
+      : `\\vec{${base}}_{\\text{ (${newObjectName})}}`
+    forceVectorsStore.updateVectorName(vectorId, newName)
+  }
+
+  // Create an interaction between the objects
   if (vector && vector.type && props.objectExperiencingForce) {
-    // Find or create the interaction
     const obj1 = interactionDiagramStore.objects.find(obj => obj.label === props.objectExperiencingForce)
     const obj2 = interactionDiagramStore.objects.find(obj => obj.label === newObjectName)
     
     if (obj1 && obj2) {
-      // Check if this interaction already exists
       const existingInteractions = interactionDiagramStore.getInteractionsBetween(obj1.id, obj2.id)
       const hasExactInteraction = existingInteractions.some(i => i.label === vector.type)
 
       if (!hasExactInteraction) {
-        // Create new interaction with the force type
         interactionDiagramStore.addInteraction(vector.type, obj1.id, obj2.id)
       }
     }
@@ -490,7 +514,7 @@ const handleObjectCreation = (event, vectorId) => {
 }
 
 .component-field {
-  width: 50px; /* Reduced from 120px */
+  width: 80px; /* Increased from 50px to accommodate 3 digits */
   margin: 0;
 }
 
@@ -499,7 +523,11 @@ const handleObjectCreation = (event, vectorId) => {
   -moz-appearance: textfield; /* Firefox */
 }
 
-
+:deep(.v-field__input input[type="number"]::-webkit-inner-spin-button),
+:deep(.v-field__input input[type="number"]::-webkit-outer-spin-button) {
+  -webkit-appearance: none;
+  margin: 0;
+}
 
 .highlighted-row {
   background-color: rgba(76, 175, 80, 0.1) !important; /* Light green with transparency */

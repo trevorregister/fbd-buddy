@@ -32,7 +32,7 @@
         >
             <v-tag :config="labelTagConfig" />
             <v-text :config="mainTextConfig" />
-            <v-text v-if="parsedLabel.subscript" :config="subscriptConfig" />
+            <v-text :config="subscriptConfig" />
         </v-label>
     </v-group>
 </template>
@@ -41,8 +41,6 @@
 import { computed, ref, watch } from 'vue'
 import { gridToCanvasCoordinates, canvasToGridCoordinates } from '~/utils/coordinates'
 import { useDebounceFn } from '@vueuse/core'
-import katex from 'katex'
-import 'katex/dist/katex.min.css'
 
 const GRID_SCALE = 15
 
@@ -209,11 +207,18 @@ const labelTagConfig = computed(() => ({
 
 const parsedLabel = computed(() => {
     const textToUse = props.name || props.label || ''
-    if (!textToUse) return { main: '', subscript: '' }
-    const cleanLabel = textToUse.replace(/[{}]/g, '')
-    const parts = cleanLabel.split('_')
+    if (!textToUse) return { main: 'F', subscript: '' }
+
+    // Remove LaTeX notation but keep the structure
+    const cleanText = textToUse
+        .replace('\\vec{', '')
+        .replace('\\text{', '')
+        .replace(/[{}\\]/g, '')
+
+    // Split into main and subscript parts
+    const parts = cleanText.split('_')
     return {
-        main: parts[0] || '',
+        main: parts[0] || 'F',
         subscript: parts[1] || ''
     }
 })
@@ -224,18 +229,19 @@ const mainTextConfig = computed(() => ({
     fontFamily: 'KaTeX_Math, Arial',
     fill: props.isHighlighted ? 'green' : 'black',
     padding: 5,
-    align: 'center'
+    align: 'center',
+    fontStyle: 'italic'
 }))
 
 const subscriptConfig = computed(() => ({
     text: parsedLabel.value.subscript,
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'KaTeX_Math, Arial',
     fill: props.isHighlighted ? 'green' : 'black',
     padding: 5,
-    align: 'center',
-    x: 12,
-    y: 6
+    align: 'left',
+    x: 15,
+    y: 8
 }))
 
 const xComponentConfig = computed(() => {
@@ -412,18 +418,6 @@ const handleDragStart = () => {
 
 const handleDragEnd = () => {
     emit('dragEnd')
-}
-
-const renderKatex = (text) => {
-  try {
-    return katex.renderToString(text, {
-      throwOnError: false,
-      displayMode: true
-    });
-  } catch (e) {
-    console.error('KaTeX error:', e);
-    return text;
-  }
 }
 
 const shouldShowLabel = computed(() => !props.hideLabels && (props.name || props.label))
