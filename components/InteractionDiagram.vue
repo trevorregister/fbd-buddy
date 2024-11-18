@@ -431,13 +431,22 @@ onBeforeUnmount(() => {
 
 const renderKatex = (text) => {
   try {
-    return katex.renderToString(text, {
+    // Extract just the force symbol and type (F_g), removing vector notation and object
+    const cleanText = text
+      .replace('\\vec{', '')
+      .replace(/\\text{[^}]+}/g, '') // Remove any \text{...} parts
+      .replace(/[{}\\]/g, '')
+      .split('_')
+      .slice(0, 2)  // Take only the first two parts (F and g)
+      .join('_')    // Rejoin with underscore
+      
+    return katex.renderToString(cleanText, {
       throwOnError: false,
-      displayMode: true
-    });
+      displayMode: false
+    })
   } catch (e) {
-    console.error('KaTeX error:', e);
-    return text;
+    console.error('KaTeX error:', e)
+    return text
   }
 }
 
@@ -548,14 +557,14 @@ input:focus {
   border-radius: 3px;
 }
 
-/* Add KaTeX specific styles */
-.katex {
+/* Update KaTeX specific styles */
+:deep(.katex) {
   font-size: 1em !important;
-  color: red;
+  color: black !important; /* Force black color */
   line-height: 1;
 }
 
-.katex-display {
+:deep(.katex-display) {
   margin: 0 !important;
   padding: 0 !important;
 }
