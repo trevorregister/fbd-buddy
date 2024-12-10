@@ -43,9 +43,9 @@
           <div class="diagram-column">
             <div class="tabs-container">
               <v-tabs v-model="activeTab">
-                <v-tab value="interaction">Interaction Diagram</v-tab>
-                <v-tab value="forceTable">Force Table</v-tab>
-                <v-tab value="forceAddition">Force Addition Diagram</v-tab>
+                <v-tab value="interaction"><v-icon icon="mdi-vector-arrange-above"></v-icon></v-tab>
+                <v-tab value="forceTable"><v-icon icon="mdi-table"></v-icon></v-tab>
+                <v-tab value="forceAddition"><v-icon icon="mdi-plus-thick"></v-icon></v-tab>
               </v-tabs>
 
               <v-window v-model="activeTab" class="grid-window">
